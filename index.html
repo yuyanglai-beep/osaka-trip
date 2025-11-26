@@ -464,12 +464,12 @@ input, select{
   font-size:12px;
 }
 
-/* Modal（底部滑出 sheet） */
+/* Modal（統一 bottom sheet 架構） */
 .modal-backdrop{
   position:fixed;
   inset:0;
   background:rgba(15,23,42,0.35);
-  display:none;
+  display:flex;
   align-items:flex-end;
   justify-content:center;
   padding:0 12px 16px;
@@ -477,11 +477,12 @@ input, select{
   backdrop-filter: blur(14px);
 
   opacity:0;
+  pointer-events:none;
   transition:opacity .25s ease-out;
 }
 .modal-backdrop.show{
-  display:flex;
   opacity:1;
+  pointer-events:auto;
 }
 .modal-sheet{
   width:100%;
@@ -560,6 +561,11 @@ input, select{
 }
 .budget-card.open .icon-rotate{
   transform:rotate(90deg);
+}
+
+/* Body 鎖捲動（modal 開啟時） */
+body.modal-open{
+  overflow:hidden;
 }
   </style>
 </head>
@@ -648,7 +654,7 @@ input, select{
 
 <script>
 /* --------------------------------------------------
-   PWA：註冊 Service Worker（簡化為一個版本）
+   PWA：註冊 Service Worker
 -------------------------------------------------- */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -1216,7 +1222,17 @@ function setupBudgetRealtime(){
 }
 
 /* --------------------------------------------------
-   Map Modal（改成用 query → Google Maps，不用 Embed API）
+   Modal 通用：body 滾動鎖定
+-------------------------------------------------- */
+function lockBodyScroll(){
+  document.body.classList.add('modal-open');
+}
+function unlockBodyScroll(){
+  document.body.classList.remove('modal-open');
+}
+
+/* --------------------------------------------------
+   Map Modal（用 query → Google Maps）
 -------------------------------------------------- */
 const mapModal = document.getElementById("mapModal");
 const mapModalMap = document.getElementById("mapModalMap");
@@ -1244,10 +1260,12 @@ function openMapModal(title, query){
     mapModalMap.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">離線中</div>`;
   }
   mapModal.classList.add("show");
+  lockBodyScroll();
 }
 function closeMapModal(){
   mapModal.classList.remove("show");
   mapModalMap.innerHTML = "";
+  unlockBodyScroll();
 }
 mapModal.addEventListener("click",(e)=>{ if(e.target===mapModal) closeMapModal(); });
 
@@ -1274,9 +1292,8 @@ function openTripModal(label, url){
     // 如果因為 X-Frame-Options 被擋，就直接開新分頁
     setTimeout(()=>{
       try{
-        // 這裡可能因跨網域被擋，catch 後直接開新分頁
         const doc = iframe.contentDocument;
-        if(!doc || (doc.body && (doc.body.innerText.includes("refused") || doc.body.innerText.includes("denied")))){
+        if(!doc || (doc.body && (doc.body.innerText && (doc.body.innerText.includes("refused") || doc.body.innerText.includes("denied"))))){
           window.open(url,"_blank");
           closeTripModal();
         }else{
@@ -1292,10 +1309,12 @@ function openTripModal(label, url){
     tripModalBody.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">離線中，無法載入 TRIP.com</div>`;
   }
   tripModal.classList.add("show");
+  lockBodyScroll();
 }
 function closeTripModal(){
   tripModal.classList.remove("show");
   tripModalBody.innerHTML = "";
+  unlockBodyScroll();
 }
 tripModal.addEventListener("click",(e)=>{ if(e.target===tripModal) closeTripModal(); });
 
@@ -1307,12 +1326,14 @@ const ROOM_KEY = "osakaRoomNumberV11_5";
 
 function openHotelModal(){
   hotelModal.classList.add("show");
+  lockBodyScroll();
   const input = document.getElementById("roomNumberInput");
   input.value = localStorage.getItem(ROOM_KEY) || "";
   input.oninput = ()=>localStorage.setItem(ROOM_KEY, input.value);
 }
 function closeHotelModal(){
   hotelModal.classList.remove("show");
+  unlockBodyScroll();
 }
 hotelModal.addEventListener("click",(e)=>{ if(e.target===hotelModal) closeHotelModal(); });
 
