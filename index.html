@@ -781,10 +781,11 @@ function showDay(di){
   window.scrollTo({top:targetY, behavior:"smooth"});
 }
 
-/* ---------- Weather（溫度 + 降雨機率） ---------- */
+/* ---------- Weather（溫度 + 降雨機率；移除 ?. / ??） ---------- */
 async function loadWeatherForDay(day, di){
   const box = document.getElementById("weather-"+di);
   if(!box) return;
+
   const city = "Osaka";
   const cacheKey = "osakaWeatherCacheV11-temp-rain";
 
@@ -796,26 +797,49 @@ async function loadWeatherForDay(day, di){
     }catch(e){
       cache = {};
     }
+
     const now = Date.now();
     if(cache[city] && (now - cache[city].ts) < 15*60*1000){
       const c = cache[city];
-      box.textContent = `🌡️ ${c.t}°C  ☔ ${c.rain}%`;
+      box.textContent = "🌡️ " + c.t + "°C  ☔ " + c.rain + "%";
       return;
     }
 
     const q = encodeURIComponent(city);
-    const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`, {
-      headers:{"Accept-Language":"ja,en,zh-TW"}
-    }).then(r=>r.json());
-    if(!geo || !geo[0]) throw new Error("geo");
-    const lat = geo[0].lat, lon = geo[0].lon;
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&daily=precipitation_probability_max&forecast_days=1&timezone=Asia%2FTokyo`).then(r=>r.json());
-    const t = w?.current?.temperature_2m ?? "-";
-    const rain = (w?.daily?.precipitation_probability_max && w.daily.precipitation_probability_max[0] != null)
-      ? w.daily.precipitation_probability_max[0] : "-";
-    box.textContent = `🌡️ ${t}°C  ☔ ${rain}%`;
+    const geo = await fetch(
+      "https://nominatim.openstreetmap.org/search?format=json&q=" + q,
+      { headers:{ "Accept-Language":"ja,en,zh-TW" } }
+    ).then(function(r){ return r.json(); });
 
-    cache[city] = {ts:now, t, rain};
+    if(!geo || !geo[0]) throw new Error("geo");
+
+    const lat = geo[0].lat;
+    const lon = geo[0].lon;
+
+    const w = await fetch(
+      "https://api.open-meteo.com/v1/forecast"
+      + "?latitude=" + lat
+      + "&longitude=" + lon
+      + "&current=temperature_2m"
+      + "&daily=precipitation_probability_max"
+      + "&forecast_days=1"
+      + "&timezone=Asia%2FTokyo"
+    ).then(function(r){ return r.json(); });
+
+    var t = "-";
+    if(w && w.current && typeof w.current.temperature_2m !== "undefined"){
+      t = w.current.temperature_2m;
+    }
+
+    var rain = "-";
+    if(w && w.daily && w.daily.precipitation_probability_max
+       && w.daily.precipitation_probability_max[0] != null){
+      rain = w.daily.precipitation_probability_max[0];
+    }
+
+    box.textContent = "🌡️ " + t + "°C  ☔ " + rain + "%";
+
+    cache[city] = { ts:now, t:t, rain:rain };
     localStorage.setItem(cacheKey, JSON.stringify(cache));
   }catch(e){
     console.error(e);
@@ -823,11 +847,6 @@ async function loadWeatherForDay(day, di){
   }
 }
 
-async function loadAllWeather(){
-  for(let i=0;i<DATA.days.length;i++){
-    loadWeatherForDay(DATA.days[i], i);
-  }
-}
 
 /* ---------- 記帳（共同記帳版） ---------- */
 const FX_KEY = "osakaFxRateV9milktea";
@@ -1169,17 +1188,37 @@ function calcSettlement(){
 }
 
 /* ---- Supabase Realtime：多裝置同步 ---- */
+/* ---- Supabase Realtime：多裝置同步（安全版本） ---- */
 function setupBudgetRealtime(){
   if(!supabaseClient) return;
-  supabaseClient
-    .channel('budgets-channel')
-    .on(
-      'postgres_changes',
-      { event:'*', schema:'public', table:'budgets', filter:`trip_id=eq.${TRIP_ID}` },
-      payload => { reloadBudget(); }
-    )
-    .subscribe();
+
+  try{
+    const channel = supabaseClient
+      .channel('budgets-channel')
+      .on(
+        'postgres_changes',
+        { event:'*', schema:'public', table:'budgets', filter:"trip_id=eq." + TRIP_ID },
+        function(payload){
+          reloadBudget();
+        }
+      )
+      .subscribe(function(status){
+        if(status === 'SUBSCRIBED'){
+          console.log("Realtime 已連線");
+        }
+      });
+
+    // Realtime 出錯時，就當作只用本機資料，不要讓畫面掛掉
+    if(channel && typeof channel.on === "function"){
+      channel.on("error", function(e){
+        console.warn("Realtime 連線失敗，改用本機模式", e);
+      });
+    }
+  }catch(e){
+    console.warn("Realtime 初始化失敗，僅使用本機記帳資料", e);
+  }
 }
+
 
 /* ---------- Map Modal（保留 KEY + Fallback） ---------- */
 const mapModal = document.getElementById("mapModal");
@@ -1364,3 +1403,4 @@ attachSheetSwipe("hotelSheet", closeHotelModal);
 </script>
 </body>
 </html>
+
