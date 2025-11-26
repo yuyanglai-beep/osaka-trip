@@ -205,8 +205,8 @@ if ('serviceWorker' in navigator) {
   - created_at timestamp (default now())
 */
 
-const SUPABASE_URL = "https://fmrk...se.co";     // ← 換成你自己的
-const SUPABASE_ANON_KEY =  "eyJhb...GevP8";            // ← 換成你自己的
+const SUPABASE_URL = "https://fmrkkwlmtxzeytjcllag.supabase.co";     // ← 換成你自己的
+const SUPABASE_ANON_KEY =  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtcmtrd2xtdHh6ZXl0amNsbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxNDYsImV4cCI6MjA3OTcyODE0Nn0.ulHd0NhuLAAWHuyT2J4lDDRWkq969W9omGRATbGevP8";            // ← 換成你自己的
 const supabaseClient = window.supabase ?
   window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) :
   null;
@@ -655,4 +655,5 @@ loadAllWeather();
 </script>
 </body>
 </html>
+
 
