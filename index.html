@@ -1268,42 +1268,56 @@ function closeAllModals(){
 /* --------------------------------------------------
    Map Modal（用 query → Google Maps）
 -------------------------------------------------- */
+/* --------------------------------------------------
+   Map Modal（C2：靜態地圖 + 外部連結）
+-------------------------------------------------- */
 function openMapModal(title, query){
-  // 先關掉其他 modal
+  // 關閉其他 modal 避免堆疊
   if (hotelModal) hotelModal.classList.remove("show");
   if (tripModal)  tripModal.classList.remove("show");
 
   mapModalTitle.textContent = title || "地圖";
-  mapModalMap.innerHTML = `<div class="modal-loading">地圖載入中…</div>`;
-  
+
   const q = (query || title || "Osaka").trim();
+
+  // 🔵 Apple Maps 連結
   const appleURL = `https://maps.apple.com/?q=${encodeURIComponent(q)}`;
 
-  // 建立 Apple Maps iframe
-  const iframe = document.createElement("iframe");
-  iframe.src = appleURL;
-  iframe.className = "w-full h-full border-0";
-  iframe.loading = "eager";
-  iframe.style.background = "#000"; // 避免白屏突兀
+  // 🔴 Google Maps 連結（搜尋）
+  const googleURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 
-  iframe.onload = () => {
-    const loading = mapModalMap.querySelector(".modal-loading");
-    if (loading) loading.remove();
-  };
+  // 🟢 Google 搜尋（攻略）
+  const searchURL = `https://www.google.com/search?q=${encodeURIComponent(q + " 攻略")}`;
 
-  iframe.onerror = () => {
-    mapModalMap.innerHTML = `
-      <div class="w-full h-full flex flex-col items-center justify-center text-white text-sm font-bold text-center px-4">
-        <div class="mb-2">地圖載入失敗，請點擊下方連結</div>
-        <a href="${appleURL}" target="_blank" class="btn nav">開啟 Apple 地圖</a>
-      </div>`;
-  };
+  // 🗺️ 靜態地圖圖片（使用 Google 靜態圖 API-free 模式）
+  const staticMapURL = 
+    `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(q)}&zoom=15&size=600x350&markers=color:red|${encodeURIComponent(q)}&key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY`;
 
-  // 把 iframe 放進 modal
-  mapModalMap.innerHTML = "";
-  mapModalMap.appendChild(iframe);
+  // ❗保證永遠顯示 → 如果 static map 不能載，就 fallback 成文字
+  mapModalMap.innerHTML = `
+    <div class="w-full h-full flex flex-col bg-black/90 overflow-y-auto">
 
-  // 顯示 modal
+      <div class="p-3 text-white font-bold text-sm border-b border-white/20">
+        ${escapeHtml(title || q)}
+      </div>
+
+      <img 
+        src="${staticMapURL}"
+        class="w-full h-auto"
+        style="background:#111;"
+        onerror="this.outerHTML='<div class=\\'text-white p-4 text-center\\'>地圖圖片無法載入</div>'"
+      >
+
+      <div class="p-3 flex flex-col gap-2">
+        <a href="${appleURL}" target="_blank" class="btn nav w-full justify-center">🍎 用 Apple Maps 開啟</a>
+        <a href="${googleURL}" target="_blank" class="btn map w-full justify-center">🗺️ 用 Google Maps 開啟</a>
+        <a href="${searchURL}" target="_blank" class="btn search w-full justify-center">🔍 查看攻略</a>
+      </div>
+
+    </div>
+  `;
+
+  // 開啟 modal
   mapModal.classList.add("show");
   lockBodyScroll();
 }
@@ -1477,6 +1491,7 @@ attachSheetSwipe("hotelSheet", closeHotelModal);
 </script>
 </body>
 </html>
+
 
 
 
