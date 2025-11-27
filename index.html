@@ -1268,48 +1268,56 @@ function closeAllModals(){
    Map Modal（用 query → Google Maps）
 -------------------------------------------------- */
 function openMapModal(title, query){
-  // 先關掉其他 modal，避免 Hotel 卡片壓在上面
   closeAllModals();
 
   mapModalTitle.textContent = title || "地圖";
   mapModalMap.innerHTML = `<div class="modal-loading">地圖載入中…</div>`;
 
   const q = query || title || "Osaka";
-  if (navigator.onLine && q){
+  const mapURL = `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+  const fallbackURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+
+  // 檢查是否為 iOS Safari / LINE Webview
+  const ua = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isLINE = ua.includes("line");
+
+  if (isIOS || isLINE){
+    // --- iOS / LINE：直接給 fallback ---
+    mapModalMap.innerHTML = `
+      <div class="w-full h-full flex flex-col items-center justify-center text-white text-sm font-bold text-center px-4">
+        <div class="mb-2">此瀏覽器無法載入 Google Maps 內嵌地圖</div>
+        <a href="${fallbackURL}" target="_blank" class="btn nav">在 Google Maps 開啟</a>
+      </div>
+    `;
+  } else {
+    // --- 其他平台：正常用 iframe ---
     const iframe = document.createElement("iframe");
-    iframe.src = `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+    iframe.src = mapURL;
     iframe.className = "w-full h-full border-0";
     iframe.loading = "lazy";
+
     iframe.onload = ()=>{
       const loading = mapModalMap.querySelector(".modal-loading");
       if (loading) loading.remove();
     };
+
     iframe.onerror = ()=>{
       mapModalMap.innerHTML = `
-        <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
-          無法載入地圖
-        </div>`;
+        <div class="w-full h-full flex flex-col items-center justify-center text-white text-sm font-bold text-center px-4">
+          <div class="mb-2">無法載入地圖</div>
+          <a href="${fallbackURL}" target="_blank" class="btn nav">在 Google Maps 開啟</a>
+        </div>
+      `;
     };
+
     mapModalMap.appendChild(iframe);
-  }else{
-    mapModalMap.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
-        離線中
-      </div>`;
   }
 
   mapModal.classList.add("show");
   lockBodyScroll();
 }
 
-function closeMapModal(){
-  // 統一呼叫 closeAllModals，確保 body 狀態正常
-  closeAllModals();
-}
-
-mapModal.addEventListener("click",(e)=>{
-  if (e.target === mapModal) closeMapModal();
-});
 
 /* --------------------------------------------------
    Trip Modal (TRIP.com iframe + fallback)
@@ -1474,4 +1482,5 @@ attachSheetSwipe("hotelSheet", closeHotelModal);
 </script>
 </body>
 </html>
+
 
