@@ -1220,7 +1220,6 @@ function setupBudgetRealtime(){
     )
     .subscribe();
 }
-
 /* --------------------------------------------------
    Modal 通用：body 滾動鎖定
 -------------------------------------------------- */
@@ -1232,54 +1231,97 @@ function unlockBodyScroll(){
 }
 
 /* --------------------------------------------------
-   Map Modal（用 query → Google Maps）
+   Map / Trip / Hotel Modal DOM 參照
 -------------------------------------------------- */
+// Map
 const mapModal = document.getElementById("mapModal");
 const mapModalMap = document.getElementById("mapModalMap");
 const mapModalTitle = document.getElementById("mapModalTitle");
 
+// Trip
+const tripModal = document.getElementById("tripModal");
+const tripModalBody = document.getElementById("tripModalBody");
+const tripModalTitle = document.getElementById("tripModalTitle");
+
+// Hotel
+const hotelModal = document.getElementById("hotelModal");
+const ROOM_KEY = "osakaRoomNumberV11_5";
+
+/* --------------------------------------------------
+   通用：一次關閉全部 modal（避免互相蓋住）
+-------------------------------------------------- */
+function closeAllModals(){
+  // 把三個 modal 都關掉
+  if (mapModal)  mapModal.classList.remove("show");
+  if (tripModal) tripModal.classList.remove("show");
+  if (hotelModal) hotelModal.classList.remove("show");
+
+  // 清掉 iframe 內容，避免下次重複載入怪怪的
+  if (mapModalMap)   mapModalMap.innerHTML = "";
+  if (tripModalBody) tripModalBody.innerHTML = "";
+
+  // 解鎖 body 捲動
+  unlockBodyScroll();
+}
+
+/* --------------------------------------------------
+   Map Modal（用 query → Google Maps）
+-------------------------------------------------- */
 function openMapModal(title, query){
+  // 先關掉其他 modal，避免 Hotel 卡片壓在上面
+  closeAllModals();
+
   mapModalTitle.textContent = title || "地圖";
   mapModalMap.innerHTML = `<div class="modal-loading">地圖載入中…</div>`;
 
   const q = query || title || "Osaka";
-  if(navigator.onLine && q){
+  if (navigator.onLine && q){
     const iframe = document.createElement("iframe");
     iframe.src = `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
     iframe.className = "w-full h-full border-0";
     iframe.loading = "lazy";
     iframe.onload = ()=>{
       const loading = mapModalMap.querySelector(".modal-loading");
-      if(loading) loading.remove();
+      if (loading) loading.remove();
     };
     iframe.onerror = ()=>{
-      mapModalMap.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">無法載入地圖</div>`;
+      mapModalMap.innerHTML = `
+        <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+          無法載入地圖
+        </div>`;
     };
     mapModalMap.appendChild(iframe);
   }else{
-    mapModalMap.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">離線中</div>`;
+    mapModalMap.innerHTML = `
+      <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+        離線中
+      </div>`;
   }
+
   mapModal.classList.add("show");
   lockBodyScroll();
 }
+
 function closeMapModal(){
-  mapModal.classList.remove("show");
-  mapModalMap.innerHTML = "";
-  unlockBodyScroll();
+  // 統一呼叫 closeAllModals，確保 body 狀態正常
+  closeAllModals();
 }
-mapModal.addEventListener("click",(e)=>{ if(e.target===mapModal) closeMapModal(); });
+
+mapModal.addEventListener("click",(e)=>{
+  if (e.target === mapModal) closeMapModal();
+});
 
 /* --------------------------------------------------
    Trip Modal (TRIP.com iframe + fallback)
 -------------------------------------------------- */
-const tripModal = document.getElementById("tripModal");
-const tripModalBody = document.getElementById("tripModalBody");
-const tripModalTitle = document.getElementById("tripModalTitle");
-
 function openTripModal(label, url){
+  // 先關其他 modal，避免互壓
+  closeAllModals();
+
   tripModalTitle.textContent = `TRIP.com ${label}`;
   tripModalBody.innerHTML = `<div class="modal-loading">TRIP.com 資訊載入中…</div>`;
-  if(navigator.onLine){
+
+  if (navigator.onLine){
     const iframe = document.createElement("iframe");
     iframe.src = url;
     iframe.className = "w-full h-full border-0";
@@ -1289,53 +1331,68 @@ function openTripModal(label, url){
       closeTripModal();
     };
     tripModalBody.appendChild(iframe);
-    // 如果因為 X-Frame-Options 被擋，就直接開新分頁
+
+    // 如果被 X-Frame-Options 擋，就改成新分頁開
     setTimeout(()=>{
       try{
         const doc = iframe.contentDocument;
-        if(!doc || (doc.body && (doc.body.innerText && (doc.body.innerText.includes("refused") || doc.body.innerText.includes("denied"))))){
-          window.open(url,"_blank");
+        if (!doc || (doc.body && doc.body.innerText &&
+          (doc.body.innerText.includes("refused") || doc.body.innerText.includes("denied")))){
+          window.open(url, "_blank");
           closeTripModal();
         }else{
           const loading = tripModalBody.querySelector(".modal-loading");
-          if(loading) loading.remove();
+          if (loading) loading.remove();
         }
       }catch(e){
-        window.open(url,"_blank");
+        window.open(url, "_blank");
         closeTripModal();
       }
     }, 900);
   }else{
-    tripModalBody.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">離線中，無法載入 TRIP.com</div>`;
+    tripModalBody.innerHTML = `
+      <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+        離線中，無法載入 TRIP.com
+      </div>`;
   }
+
   tripModal.classList.add("show");
   lockBodyScroll();
 }
+
 function closeTripModal(){
-  tripModal.classList.remove("show");
-  tripModalBody.innerHTML = "";
-  unlockBodyScroll();
+  closeAllModals();
 }
-tripModal.addEventListener("click",(e)=>{ if(e.target===tripModal) closeTripModal(); });
+
+tripModal.addEventListener("click",(e)=>{
+  if (e.target === tripModal) closeTripModal();
+});
 
 /* --------------------------------------------------
    Hotel Modal + room number（localStorage）
 -------------------------------------------------- */
-const hotelModal = document.getElementById("hotelModal");
-const ROOM_KEY = "osakaRoomNumberV11_5";
-
 function openHotelModal(){
+  // 先關掉 Map / Trip，確保只剩住宿卡片
+  closeAllModals();
+
   hotelModal.classList.add("show");
   lockBodyScroll();
+
   const input = document.getElementById("roomNumberInput");
-  input.value = localStorage.getItem(ROOM_KEY) || "";
-  input.oninput = ()=>localStorage.setItem(ROOM_KEY, input.value);
+  if (input){
+    input.value = localStorage.getItem(ROOM_KEY) || "";
+    input.oninput = ()=>localStorage.setItem(ROOM_KEY, input.value);
+  }
 }
+
 function closeHotelModal(){
-  hotelModal.classList.remove("show");
-  unlockBodyScroll();
+  closeAllModals();
 }
-hotelModal.addEventListener("click",(e)=>{ if(e.target===hotelModal) closeHotelModal(); });
+
+hotelModal.addEventListener("click",(e)=>{
+  if (e.target === hotelModal) closeHotelModal();
+});
+
 
 /* --------------------------------------------------
    Bottom sheet：滑一下就關
@@ -1417,3 +1474,4 @@ attachSheetSwipe("hotelSheet", closeHotelModal);
 </script>
 </body>
 </html>
+
