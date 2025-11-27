@@ -567,6 +567,14 @@ input, select{
 body.modal-open{
   overflow:hidden;
 }
+/* ---- Map Modal 永遠最上層 ---- */
+#mapModal{
+  z-index: 999 !important;      /* 地圖的黑色遮罩 */
+}
+#mapModal .modal-sheet{
+  z-index: 1000 !important;     /* 地圖裡那個白色手機卡片本體 */
+}
+
   </style>
 </head>
 <body>
@@ -604,17 +612,6 @@ body.modal-open{
     </nav>
   </div>
 
-  <!-- Map Modal -->
-  <div id="mapModal" class="modal-backdrop">
-    <div class="modal-sheet full" id="mapSheet">
-      <div class="modal-handle"></div>
-      <div class="modal-head">
-        <div id="mapModalTitle">地圖</div>
-        <button class="modal-close" onclick="closeMapModal()">✕</button>
-      </div>
-      <div id="mapModalMap" class="modal-map"></div>
-    </div>
-  </div>
 
   <!-- Trip Modal -->
   <div id="tripModal" class="modal-backdrop">
@@ -652,6 +649,17 @@ body.modal-open{
     </div>
   </div>
 
+  <!-- Map Modal -->
+  <div id="mapModal" class="modal-backdrop">
+    <div class="modal-sheet full" id="mapSheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <div id="mapModalTitle">地圖</div>
+        <button class="modal-close" onclick="closeMapModal()">✕</button>
+      </div>
+      <div id="mapModalMap" class="modal-map"></div>
+    </div>
+  </div>
 <script>
 /* --------------------------------------------------
    PWA：註冊 Service Worker
@@ -1238,7 +1246,17 @@ const mapModal = document.getElementById("mapModal");
 const mapModalMap = document.getElementById("mapModalMap");
 const mapModalTitle = document.getElementById("mapModalTitle");
 
+const hotelModal = document.getElementById("hotelModal");
+
+
 function openMapModal(title, query){
+  // ① 如果住宿 modal 正在開著，先把它關掉「視覺上」
+  if (hotelModal) {
+    hotelModal.classList.remove("show");
+    // 注意：這裡不要叫 closeHotelModal()，避免把 body 的鎖捲動一起解掉
+  }
+
+  // ② 再來打開地圖 modal
   mapModalTitle.textContent = title || "地圖";
   mapModalMap.innerHTML = `<div class="modal-loading">地圖載入中…</div>`;
 
@@ -1259,9 +1277,11 @@ function openMapModal(title, query){
   }else{
     mapModalMap.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">離線中</div>`;
   }
+
   mapModal.classList.add("show");
   lockBodyScroll();
 }
+
 function closeMapModal(){
   mapModal.classList.remove("show");
   mapModalMap.innerHTML = "";
