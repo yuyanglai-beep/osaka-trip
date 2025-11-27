@@ -1269,48 +1269,50 @@ function closeAllModals(){
    Map Modal（用 query → Google Maps）
 -------------------------------------------------- */
 function openMapModal(title, query){
-  // 先關掉其他 modal，避免 Hotel 卡片壓在上面
-  closeAllModals();
+  // 先關掉其他 modal
+  if (hotelModal) hotelModal.classList.remove("show");
+  if (tripModal)  tripModal.classList.remove("show");
 
   mapModalTitle.textContent = title || "地圖";
   mapModalMap.innerHTML = `<div class="modal-loading">地圖載入中…</div>`;
+  
+  const q = (query || title || "Osaka").trim();
+  const appleURL = `https://maps.apple.com/?q=${encodeURIComponent(q)}`;
 
-  const q = query || title || "Osaka";
-  if (navigator.onLine && q){
-    const iframe = document.createElement("iframe");
-    iframe.src = `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
-    iframe.className = "w-full h-full border-0";
-    iframe.loading = "lazy";
-    iframe.onload = ()=>{
-      const loading = mapModalMap.querySelector(".modal-loading");
-      if (loading) loading.remove();
-    };
-    iframe.onerror = ()=>{
-      mapModalMap.innerHTML = `
-        <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
-          無法載入地圖
-        </div>`;
-    };
-    mapModalMap.appendChild(iframe);
-  }else{
+  // 建立 Apple Maps iframe
+  const iframe = document.createElement("iframe");
+  iframe.src = appleURL;
+  iframe.className = "w-full h-full border-0";
+  iframe.loading = "eager";
+  iframe.style.background = "#000"; // 避免白屏突兀
+
+  iframe.onload = () => {
+    const loading = mapModalMap.querySelector(".modal-loading");
+    if (loading) loading.remove();
+  };
+
+  iframe.onerror = () => {
     mapModalMap.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
-        離線中
+      <div class="w-full h-full flex flex-col items-center justify-center text-white text-sm font-bold text-center px-4">
+        <div class="mb-2">地圖載入失敗，請點擊下方連結</div>
+        <a href="${appleURL}" target="_blank" class="btn nav">開啟 Apple 地圖</a>
       </div>`;
-  }
+  };
 
+  // 把 iframe 放進 modal
+  mapModalMap.innerHTML = "";
+  mapModalMap.appendChild(iframe);
+
+  // 顯示 modal
   mapModal.classList.add("show");
   lockBodyScroll();
 }
 
 function closeMapModal(){
-  // 統一呼叫 closeAllModals，確保 body 狀態正常
-  closeAllModals();
+  mapModal.classList.remove("show");
+  mapModalMap.innerHTML = "";
+  unlockBodyScroll();
 }
-
-mapModal.addEventListener("click",(e)=>{
-  if (e.target === mapModal) closeMapModal();
-});
 
 /* --------------------------------------------------
    Trip Modal (TRIP.com iframe + fallback)
@@ -1475,6 +1477,7 @@ attachSheetSwipe("hotelSheet", closeHotelModal);
 </script>
 </body>
 </html>
+
 
 
 
