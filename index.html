@@ -1,1498 +1,621 @@
-<!doctype html>
-<html lang="zh-TW">
+<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <title>Osaka Trip 🍱 - v11.5-milktea</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Osaka 行程 & 記帳 App</title>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase JS v2（共同記帳用） -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json">
-
-  <!-- PWA theme color -->
-  <meta name="theme-color" content="#c8a889">
+  <!-- PWA Manifest（相對路徑 for GitHub Pages） -->
+  <link rel="manifest" href="./manifest.json" />
 
   <style>
-:root{
-  /* 奶茶調校版 palette */
-  --bg:#EFE9E2;
-  --card:#FFFFFF;
-  --ink:#3E332A;
-  --muted:#867969;
+    :root {
+      --blue-main: #3b82f6;
+      --blue-soft: #dbeafe;
+      --blue-border: #93c5fd;
+      --bg: #f7f3ee;
+      --text-main: #333;
+      --card-bg: #fff;
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
 
-  --line:#E5DBCF;
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+      color: var(--text-main);
+    }
 
-  --accent:#C8A889;        /* main milk-tea */
-  --accent-soft:#F4ECE4;   /* soft milk-tea */
-  --accent-dark:#A28362;   /* deeper header */
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 12px 16px 80px;
+    }
 
-  --important:#C7D6C1;     /* genmaicha green for reminders edge */
-  --important-soft:#F3F6F1;
-  --important-text:#3A4E3E;
-}
+    header { text-align: center; padding: 8px 0 12px; }
+    header h1 { margin: 0; font-size: 20px; }
 
-body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  -webkit-tap-highlight-color:transparent;
-}
-body::before{
-  content:"";
-  position:fixed; inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(900px 420px at 0% -10%, rgba(200,168,137,0.14), transparent 60%),
-    radial-gradient(700px 360px at 100% 0%, rgba(168,132,99,0.10), transparent 60%);
-  z-index:-1;
-}
+    /* Tab Buttons */
+    .tab-bar {
+      display: flex; gap: 6px; margin: 12px 0;
+    }
+    .tab-btn {
+      flex: 1; padding: 8px 0; border-radius: 999px;
+      border: none; cursor: pointer; font-weight: 600;
+      background: var(--blue-soft); color: var(--blue-main);
+    }
+    .tab-btn.active { background: var(--blue-main); color:#fff; }
 
-/* -------- Topbar（升級版） -------- */
-.topbar{
-  position:sticky; top:0; z-index:35;
-  background:linear-gradient(180deg, rgba(200,168,137,0.98), rgba(162,131,98,0.98));
-  color:white;
-  border-bottom:1px solid rgba(255,255,255,0.26);
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
-  backdrop-filter: blur(18px);
-}
-.topbar-inner{
-  max-width:440px; margin:0 auto;
-  padding:10px 12px 8px;
-}
-.title{
-  font-weight:900;
-  font-size:21px;
-  letter-spacing:.48px;
-}
-.subtitle{
-  color:rgba(255,255,255,0.9);
-  font-size:12px;
-  margin-top:3px;
-}
-.countdown{
-  color:rgba(255,255,255,0.85);
-  font-size:11px;
-  margin-top:2px;
-}
-.seg{
-  display:flex;
-  gap:8px;
-  margin-top:8px;
-  flex-wrap:wrap;
-}
-.chip{
-  background:rgba(255,255,255,0.15);
-  border:1px solid rgba(255,255,255,0.45);
-  border-radius:999px;
-  padding:6px 12px;
-  font-size:12px;
-  font-weight:900;
-  color:white;
-  backdrop-filter: blur(10px);
-  box-shadow:0 2px 6px rgba(0,0,0,0.16);
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-}
-.chip.hotel{
-  background:rgba(255,255,255,0.2);
-}
+    /* Tabs Content */
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
 
-/* -------- Layout -------- */
-.phone{
-  max-width:440px;
-  margin:0 auto;
-  min-height:100vh;
-  padding:0 12px 96px;
-}
+    /* Days Selector */
+    .day-switcher {
+      display:flex; gap:8px;
+      overflow-x:auto; padding-bottom:4px;
+    }
+    .day-chip {
+      padding: 6px 10px; white-space: nowrap;
+      border-radius: 999px; border: 1px solid var(--blue-border);
+      background:#fff; cursor:pointer; font-size:13px;
+    }
+    .day-chip.active { background: var(--blue-main); color:#fff; }
 
-/* -------- Tabbar（底部） -------- */
-.tabbar{
-  position:fixed;
-  bottom:10px;
-  left:50%;
-  transform:translateX(-50%);
-  width:92%;
-  max-width:420px;
-  background:rgba(255,255,255,0.96);
-  border:1px solid rgba(226,213,196,0.9);
-  border-radius:18px;
-  display:flex;
-  padding:6px;
-  gap:6px;
-  box-shadow:0 18px 45px rgba(15,23,42,0.18);
-  z-index:40;
-  backdrop-filter: blur(20px);
-}
-.tabbtn{
-  flex:1;
-  text-align:center;
-  padding:9px 0;
-  font-size:12px;
-  font-weight:900;
-  color:var(--muted);
-  border-radius:12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-}
-.tabbtn span.icon{
-  font-size:14px;
-}
-.tabbtn.active{
-  background:var(--accent-soft);
-  color:#7b5b3f;
-  box-shadow:0 1px 6px rgba(0,0,0,0.08) inset;
-}
+    /* Highlight / Important Notice */
+    .highlight-card {
+      background: var(--blue-soft); padding: 10px;
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      margin: 12px 0; font-size: 13px;
+    }
 
-/* -------- 主畫面容器淡入動畫 -------- */
-#main,
-#tools{
-  display:none;
-  opacity:0;
-  transform:translateY(8px);
-  transition:opacity .22s ease-out, transform .22s ease-out;
-}
-#main.active,
-#tools.active{
-  display:block;
-  opacity:1;
-  transform:translateY(0);
-}
+    /* Event Cards */
+    .event-card {
+      background:#fff; padding:10px;
+      margin-bottom:8px; border-left:3px solid var(--blue-main);
+      border-radius: var(--radius); cursor:pointer;
+    }
+    .event-time { font-size:12px; color:#555; }
+    .event-title { font-size:15px; font-weight:bold; }
+    .event-place { font-size:13px; color:#666; }
 
-/* -------- Day Segmented Control -------- */
-.pills{
-  position:sticky;
-  top:58px;
-  z-index:20;
-  padding:10px 2px 6px;
-  display:flex;
-  gap:0;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
-.pills-inner{
-  display:flex;
-  gap:0;
-  background:rgba(244,236,228,0.95);
-  border-radius:999px;
-  border:1px solid rgba(223,208,191,0.9);
-  padding:3px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.04);
-}
-.pill{
-  flex:1;
-  background:transparent;
-  border:none;
-  border-radius:999px;
-  padding:7px 14px;
-  font-size:12px;
-  font-weight:900;
-  color:var(--muted);
-  white-space:nowrap;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-width:72px;
-}
-.pill.active{
-  background:var(--card);
-  color:#7b5b3f;
-  box-shadow:0 2px 8px rgba(0,0,0,0.12);
-}
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset:0; background: rgba(0,0,0,0.4);
+      display:none; align-items:center; justify-content:center;
+      z-index:50; padding:16px;
+    }
+    .modal-backdrop.show { display:flex; }
 
-/* -------- Day / 卡片 -------- */
-.day{
-  display:none;
-  padding-top:10px;
-}
-.day.active{
-  display:block;
-  animation:dayFadeIn .22s ease-out;
-}
-@keyframes dayFadeIn{
-  from{
-    opacity:0;
-    transform:translateX(8px);
-  }
-  to{
-    opacity:1;
-    transform:translateX(0);
-  }
-}
+    .modal {
+      background:#fff; width:100%; max-width:480px;
+      border-radius: var(--radius); overflow-y:auto;
+      max-height:90vh; box-shadow:0 10px 32px rgba(0,0,0,0.25);
+    }
+    .modal img {
+      width: 100%; height: 200px; object-fit: cover;
+      background:#ddd;
+    }
+    .modal-body { padding:12px; }
+    .btn-blue {
+      background: var(--blue-main); color:#fff;
+      border-radius: var(--radius); padding:6px 12px;
+      border:none; cursor:pointer;
+    }
 
-.dayhead{
-  margin:6px 2px 10px;
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-.daytitle{
-  font-weight:900;
-  font-size:16px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-}
-.daytitle-text{
-  flex:1;
-}
-.weather{
-  background:var(--card);
-  border:1px solid rgba(226,213,196,0.9);
-  border-radius:999px;
-  padding:4px 10px;
-  font-size:12px;
-  color:var(--muted);
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  min-width:150px;
-  justify-content:flex-end;
-  box-shadow:0 1px 4px rgba(15,23,42,0.08);
-  white-space:nowrap;
-}
-.day-stats{
-  font-size:12px;
-  color:var(--muted);
-}
+    /* Info Cards */
+    .info-card {
+      background:#fff; padding:12px;
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      margin-bottom:14px; font-size:13px;
+    }
+    .info-row { margin-bottom:6px; }
 
-/* 今日提醒 */
-.today-imp{
-  background:var(--important-soft);
-  border:1px solid rgba(199,214,193,0.95);
-  border-left:4px solid var(--important);
-  border-radius:12px;
-  padding:8px 10px;
-  font-size:13px;
-  font-weight:900;
-  color:var(--important-text);
-  display:none;
-  box-shadow:0 2px 9px rgba(26,46,35,0.14);
-}
-.today-imp.show{
-  display:block;
-}
+    /* Expense */
+    .expense-item {
+      display:flex; justify-content:space-between;
+      padding:6px 0; border-bottom:1px solid #eee;
+      align-items:center;
+    }
+    .expense-note { font-size:12px; color:#666; }
 
-/* 卡片本體 */
-.card{
-  background:var(--card);
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:9px;
-  position:relative;
-  border:1px solid rgba(0,0,0,0.04);
-  box-shadow:0 1px 6px rgba(15,23,42,0.12);
-}
-.card.important{
-  border-left:4px solid var(--important);
-  background:linear-gradient(180deg, #FFFFFF, var(--important-soft));
-}
-.important-badge{
-  font-size:11px;
-  font-weight:900;
-  color:var(--important-text);
-  background:var(--important-soft);
-  border:1px solid rgba(195,209,190,0.9);
-  border-radius:8px;
-  padding:2px 6px;
-}
-.time{
-  font-weight:900;
-  font-size:12px;
-  letter-spacing:.3px;
-  color:#7b5b3f;
-}
-.row{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:8px;
-  margin-top:4px;
-}
-.h3{
-  font-weight:900;
-  font-size:15px;
-  line-height:1.35;
-}
-.note{
-  font-size:13px;
-  color:var(--ink);
-  white-space:pre-line;
-  margin-top:6px;
-  line-height:1.6;
-}
-
-/* 按鈕 */
-.btn{
-  border:1px solid var(--line);
-  background:rgba(255,255,255,0.96);
-  border-radius:10px;
-  padding:6px 8px;
-  font-size:12px;
-  font-weight:900;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-}
-.btn.map{
-  color:#7b5b3f;
-  border-color:#e9d7c3;
-  background:#f7efe6;
-}
-.btn.nav{
-  color:#0b7a41;
-  border-color:#bbf7d0;
-  background:#ecfdf5;
-}
-.btn.search{
-  color:#7c3aed;
-  border-color:#ddd6fe;
-  background:#f5f3ff;
-}
-
-/* 子項目 */
-.sub{
-  margin-top:8px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-.subitem{
-  background:rgba(255,255,255,0.95);
-  border:1px dashed var(--line);
-  border-radius:10px;
-  padding:8px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  font-size:13px;
-  font-weight:800;
-}
-
-/* 工具區 */
-.tools{
-  padding-top:8px;
-}
-.tools-card{
-  background:var(--card);
-  border:1px solid rgba(0,0,0,0.04);
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:10px;
-  box-shadow:0 1px 6px rgba(15,23,42,0.12);
-}
-.tools-title{
-  font-weight:900;
-  font-size:14px;
-  margin-bottom:6px;
-}
-
-/* Input 基礎樣式 */
-input, select{
-  width:100%;
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:8px 10px;
-  font-size:13px;
-  background:white;
-}
-
-/* 記帳卡片（折疊版） */
-.budget-card{
-  border-radius:14px;
-  border:1px solid rgba(0,0,0,0.04);
-  background:var(--card);
-  box-shadow:0 1px 6px rgba(15,23,42,0.12);
-  padding:8px 10px;
-  margin-top:6px;
-}
-.budget-header{
-  width:100%;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  background:transparent;
-  border:none;
-  padding:4px 0;
-}
-.budget-title{
-  font-size:13px;
-  font-weight:800;
-  text-align:left;
-}
-.budget-meta{
-  font-size:12px;
-  color:var(--muted);
-  text-align:right;
-}
-.budget-body{
-  margin-top:6px;
-  display:none;
-}
-.budget-card.open .budget-body{
-  display:block;
-}
-.budget-row-fields{
-  display:grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap:6px;
-}
-.budget-actions{
-  margin-top:6px;
-  display:flex;
-  gap:6px;
-}
-.budget-total{
-  font-weight:900;
-  color:#7b5b3f;
-  margin-top:8px;
-  font-size:14px;
-}
-.muted{
-  color:var(--muted);
-  font-size:12px;
-}
-
-/* Modal（統一 bottom sheet 架構） */
-.modal-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,0.35);
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  padding:0 12px 16px;
-  z-index:60;
-  backdrop-filter: blur(14px);
-
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .25s ease-out;
-}
-.modal-backdrop.show{
-  opacity:1;
-  pointer-events:auto;
-}
-.modal-sheet{
-  width:100%;
-  max-width:420px;
-  background:var(--card);
-  border-radius:18px 18px 0 0;
-  overflow:hidden;
-  border:1px solid var(--line);
-  box-shadow:0 18px 50px rgba(0,0,0,0.28);
-
-  transform:translateY(100%);
-  transition:transform .28s ease-out;
-}
-.modal-backdrop.show .modal-sheet{
-  transform:translateY(0%);
-}
-.modal-sheet.full{
-  height:92vh;
-}
-.modal-handle{
-  width:46px;
-  height:4px;
-  border-radius:999px;
-  background:rgba(148,136,121,0.4);
-  margin:8px auto 4px;
-}
-.modal-head{
-  padding:8px 12px;
-  background:var(--accent-dark);
-  color:white;
-  font-weight:900;
-  font-size:13px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.modal-close{
-  background:white;
-  color:var(--accent-dark);
-  width:26px;
-  height:26px;
-  border-radius:999px;
-  font-weight:900;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.modal-map{
-  width:100%;
-  height:280px; /* 一般 modal 給固定高度 */
-  background:#0b1220;
-}
-.modal-sheet.full .modal-map{
-  height:calc(92vh - 56px); /* 全螢幕地圖 / Trip 彈窗用 */
-}
-.modal-body{
-  padding:12px;
-}
-
-/* Modal loading */
-.modal-loading{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:13px;
-  font-weight:900;
-  color:#f9fafb;
-  background:radial-gradient(circle at 20% 20%, rgba(248,250,252,0.22), rgba(15,23,42,1));
-}
-
-/* 小 icon 按鈕 */
-.icon-rotate{
-  transition:transform 0.18s ease-out;
-}
-.budget-card.open .icon-rotate{
-  transform:rotate(90deg);
-}
-
-/* Body 鎖捲動（modal 開啟時） */
-body.modal-open{
-  overflow:hidden;
-}
+    /* 3 dots menu */
+    .menu-btn {
+      cursor:pointer; font-size:18px;
+      padding:0 6px; color:#555;
+    }
+    .menu-panel {
+      position:absolute;
+      background:#fff; border:1px solid #ddd;
+      border-radius:8px; padding:6px 0;
+      width:120px; box-shadow:0 4px 18px rgba(0,0,0,0.12);
+      display:none; z-index:80;
+    }
+    .menu-panel.show { display:block; }
+    .menu-item {
+      padding:6px 12px; cursor:pointer;
+    }
+    .menu-item:hover { background:#f3f4f6; }
   </style>
 </head>
 <body>
+<div class="app">
+  <header>
+    <h1>大阪行程 & 記帳</h1>
+  </header>
 
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="title">Osaka Trip 🍱</div>
-      <div class="subtitle">日本大阪 ｜四天三夜🇯🇵 12/5–12/8</div>
-      <div id="tripCountdown" class="countdown"></div>
-      <div class="seg">
-        <button class="chip" onclick="openTripModal('GK050','https://tw.trip.com/actualtime/detail?flightNo=GK050&departCity=TPE&arriveCity=KIX&date=2025-12-05&locale=zh-TW&curr=TWD')">
-          ✈️ <span>GK050</span>
+  <!-- Tab Buttons -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="itinerary">行程</button>
+    <button class="tab-btn" data-tab="info">資訊 ＆ 記帳</button>
+  </div>
+
+  <!-- 行程 TAB -->
+  <div class="tab-content active" id="tab-itinerary">
+    <div class="day-switcher" id="day-switcher"></div>
+    <div id="day-content"></div>
+  </div>
+
+  <!-- 資訊 TAB -->
+  <div class="tab-content" id="tab-info">
+
+    <!-- 航班資訊 -->
+    <div class="info-card">
+      <strong>✈ 航班資訊</strong>
+      <div class="info-row">
+        去程 GK050
+        <button class="btn-blue"
+          onclick="window.open('https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=GK050&dcode=TPE&acode=KIX&queryDate=2025-12-05&queryTime=02:30:00&locale=zh-TW')">
+          查看
         </button>
-        <button class="chip" onclick="openTripModal('BR131','https://tw.trip.com/actualtime/detail?flightNo=BR131&departCity=KIX&arriveCity=TPE&date=2025-12-08&locale=zh-TW&curr=TWD')">
-          ✈️ <span>BR131</span>
-        </button>
-        <button class="chip hotel" onclick="openHotelModal()">
-          🏨 <span>Dormy inn PREMIUM Nanba ANNEX</span>
+      </div>
+      <div class="info-row">
+        回程 BR131
+        <button class="btn-blue"
+          onclick="window.open('https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=BR131&dcode=KIX&acode=TPE&queryDate=2025-12-08&queryTime=12:55:00&locale=zh-TW')">
+          查看
         </button>
       </div>
     </div>
-  </div>
 
-  <div class="phone">
-    <main id="main"></main>
-    <section id="tools" class="tools"></section>
-
-    <nav class="tabbar">
-      <button id="tab-itin" class="tabbtn active" onclick="showTab('itin')">
-        <span class="icon">🗺️</span><span>行程</span>
+    <!-- 住宿 -->
+    <div class="info-card">
+      <strong>🏠 住宿</strong><br>
+      Dormy Inn PREMIUM Nanba ANNEX
+      <div class="info-row">
+        房號：<input id="room-number" style="padding:4px 6px; width:80px;">
+      </div>
+      <button class="btn-blue"
+        onclick="window.open('https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Premium+Namba+Annex')">
+        地圖
       </button>
-      <button id="tab-tools" class="tabbtn" onclick="showTab('tools')">
-        <span class="icon">💰</span><span>記帳</span>
-      </button>
-    </nav>
-  </div>
+    </div>
 
-  <!-- Map Modal -->
-  <div id="mapModal" class="modal-backdrop">
-    <div class="modal-sheet full" id="mapSheet">
-      <div class="modal-handle"></div>
-      <div class="modal-head">
-        <div id="mapModalTitle">地圖</div>
-        <button class="modal-close" onclick="closeMapModal()">✕</button>
-      </div>
-      <div id="mapModalMap" class="modal-map"></div>
+    <!-- 記帳區（第 3 部分會補上 JS） -->
+    <div class="info-card" id="expense-section">
+      <strong>💴 新增支出（JPY）</strong>
+      <div id="rate-info" style="font-size:12px;color:#555;margin:4px 0;">匯率讀取中...</div>
+
+      <form id="expense-form">
+        <input type="number" id="exp-amount" placeholder="金額（JPY）" required />
+        <select id="exp-payer">
+          <option value="羊">羊</option>
+          <option value="熙">熙</option>
+        </select>
+        <input type="text" id="exp-note" placeholder="備註（餐費 / 交通）"/>
+        <button class="btn-blue" style="width:100%;margin-top:6px;">新增</button>
+      </form>
+
+      <div id="expense-list" style="margin-top:10px;"></div>
+      <div id="expense-total" style="margin-top:6px; font-weight:bold;"></div>
+      <div id="settlement" style="margin-top:10px; background:#e0edff; padding:8px; border-radius:8px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <img id="modal-img" src="" alt="景點圖片">
+    <div class="modal-body">
+      <div id="modal-title" style="font-size:16px;font-weight:700;"></div>
+      <div id="modal-sub" style="font-size:12px;color:#555;margin-top:3px;"></div>
+      <div id="modal-desc" style="margin:8px 0;"></div>
+
+      <button class="btn-blue" id="modal-nav">地圖</button>
+      <button class="btn-blue" id="modal-close" style="background:#777;margin-left:6px;">關閉</button>
     </div>
   </div>
+</div>
 
-  <!-- Trip Modal -->
-  <div id="tripModal" class="modal-backdrop">
-    <div class="modal-sheet full" id="tripSheet">
-      <div class="modal-handle"></div>
-      <div class="modal-head">
-        <div id="tripModalTitle">航班資訊</div>
-        <button class="modal-close" onclick="closeTripModal()">✕</button>
-      </div>
-      <div id="tripModalBody" class="modal-map"></div>
-    </div>
-  </div>
-
-  <!-- Hotel Modal -->
-  <div id="hotelModal" class="modal-backdrop">
-    <div class="modal-sheet" id="hotelSheet">
-      <div class="modal-handle"></div>
-      <div class="modal-head">
-        <div>住宿資訊</div>
-        <button class="modal-close" onclick="closeHotelModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="font-extrabold text-slate-900">Dormy inn PREMIUM Nanba ANNEX</div>
-        <div class="mt-2 flex gap-2">
-          <!-- 改為用地點名稱查詢，不用 Embed API key -->
-          <button class="btn map" onclick="openMapModal('Dormy inn PREMIUM Nanba ANNEX','Dormy inn PREMIUM Nanba ANNEX Osaka')">地圖</button>
-          <a class="btn nav" href="https://www.google.com/maps/dir/?api=1&destination=Dormy%20inn%20PREMIUM%20Nanba%20ANNEX&travelmode=driving" target="_blank" rel="noopener">導航</a>
-        </div>
-
-        <div class="mt-4 font-extrabold text-sm">房間號碼</div>
-        <!-- 數字鍵盤輸入 -->
-        <input id="roomNumberInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="例如：1203" class="mt-2">
-        <div class="muted mt-1">會自動儲存在手機，不怕忘記。</div>
-      </div>
-    </div>
-  </div>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* --------------------------------------------------
-   PWA：註冊 Service Worker
--------------------------------------------------- */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(console.error);
-  });
-}
+/* ---------------------------------------------------------
+   Wikipedia 圖片 API（免 key）
+--------------------------------------------------------- */
+async function fetchWikipediaImage(keyword) {
+  try {
+    // Step 1: 找頁面
+    const searchUrl = `https://zh.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(keyword)}&format=json&origin=*`;
+    const searchRes = await fetch(searchUrl).then(r => r.json());
+    if (!searchRes.query.search.length) return null;
 
-/* --------------------------------------------------
-   Supabase 設定（共同記帳）
--------------------------------------------------- */
-const SUPABASE_URL = "https://fmrkkwlmtxzeytjcllag.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtcmtrd2xtdHh6ZXl0amNsbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxNDYsImV4cCI6MjA3OTcyODE0Nn0.ulHd0NhuLAAWHuyT2J4lDDRWkq969W9omGRATbGevP8";
+    const pageId = searchRes.query.search[0].pageid;
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Step 2: 取主圖
+    const pageUrl = `https://zh.wikipedia.org/w/api.php?action=query&pageids=${pageId}&prop=pageimages&pithumbsize=800&format=json&origin=*`;
+    const pageRes = await fetch(pageUrl).then(r => r.json());
 
-// 這個行程的 ID（給多個行程共用時區分用）
-const TRIP_ID = "osaka-v11-5-milktea";
+    const pages = pageRes.query.pages;
+    const page = pages[pageId];
+    return page.thumbnail?.source || null;
 
-/* Trip 日期（給倒數計時用）*/
-const TRIP_START = new Date("2025-12-05T00:00:00+09:00");
-const TRIP_END   = new Date("2025-12-08T23:59:59+09:00");
-
-/* --------------------------------------------------
-   行程 DATA（保持原有結構）
--------------------------------------------------- */
-const DATA = {"appTitle": "Osaka Trip 🍱", "dateRange": "日本大阪 ｜四天三夜🇯🇵 12/5–12/8", "flights": {"outbound": {"label": "GK050", "trip_url": "https://tw.trip.com/actualtime/detail?flightNo=GK050&departCity=TPE&arriveCity=KIX&date=2025-12-05&locale=zh-TW&curr=TWD", "time": "TPE 02:30 → KIX 06:00"}, "inbound": {"label": "BR131", "trip_url": "https://tw.trip.com/actualtime/detail?flightNo=BR131&departCity=KIX&arriveCity=TPE&date=2025-12-08&locale=zh-TW&curr=TWD", "time": "KIX 12:55 → TPE 15:05"}}, "hotel": "Dormy inn PREMIUM Nanba ANNEX", "hotelMap": "https://www.google.com/maps/place/Dormy+inn+PREMIUM+Nanba+ANNEX/data=!4m2!3m1!1s0x0:0xa2f84770b4e09b49?sa=X&ved=1t:2428&ictx=111", "days": [{"city_hint": "Osaka", "title": "12/5（五） Day1 海遊館-心齋橋", "events": [{"start": "07:30", "end": "09:00", "icon": "🚄", "title": "南海特急-便利商店", "note": "可以先上網買票/現場直接買票\n班次很多"}, {"start": "09:30", "end": "10:00", "icon": "🧳", "title": "寄行李", "note": "飯店寄物"}, {"start": "11:00", "end": "15:00", "icon": "🐋", "title": "海遊館 Osaka Aquarium Kaiyukan", "note": "看完可以逛大阪港\n🎫門票：浮動價格 可先訂", "map_query": "海遊館 Osaka Aquarium Kaiyukan", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E6%B5%B7%E9%81%8A%E9%A4%A8%20Osaka%20Aquarium%20Kaiyukan", "map_external": "https://www.google.com/maps/search/?api=1&query=%E6%B5%B7%E9%81%8A%E9%A4%A8%20Osaka%20Aquarium%20Kaiyukan", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E6%B5%B7%E9%81%8A%E9%A4%A8%20Osaka%20Aquarium%20Kaiyukan&travelmode=driving"}, {"start": "15:30", "end": "17:00", "icon": "🛏️", "title": "休息／逛逛時間", "note": "累累所以難波拿行李&check in\n有時間可去難波八阪神社"}, {"start": "17:30", "end": "19:00", "icon": "🥣", "title": "晚餐", "note": "板前燒肉一斗", "map_query": "板前燒肉一斗 東心齋橋店", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E6%9D%BF%E5%89%8D%E7%87%92%E8%82%89%E4%B8%80%E6%96%97%20%E6%9D%B1%E5%BF%83%E9%BD%8B%E6%A9%8B%E5%BA%97", "map_external": "https://www.google.com/maps/search/?api=1&query=%E6%9D%BF%E5%89%8D%E7%87%92%E8%82%89%E4%B8%80%E6%96%97%20%E6%9D%B1%E5%BF%83%E9%BD%8B%E6%A9%8B%E5%BA%97", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E6%9D%BF%E5%89%8D%E7%87%92%E8%82%89%E4%B8%80%E6%96%97%20%E6%9D%B1%E5%BF%83%E9%BD%8B%E6%A9%8B%E5%BA%97&travelmode=driving"}, {"start": "19:00", "icon": "🛒", "title": "道頓堀 & 心齋橋逛街", "note": "⚠️ 百貨公司 20:00 關 要逛先逛百貨", "map_query": "道頓堀 心齋橋", "subitems": [{"text": "🐙 KUKURU", "map_query": "KUKURU 道頓堀", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=KUKURU%20%E9%81%93%E9%A0%93%E5%A0%80", "map_external": "https://www.google.com/maps/search/?api=1&query=KUKURU%20%E9%81%93%E9%A0%93%E5%A0%80", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=KUKURU%20%E9%81%93%E9%A0%93%E5%A0%80&travelmode=driving"}, {"text": "🏋🏻 心齋橋跑跑人", "map_query": "心齋橋跑跑人", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E5%BF%83%E9%BD%8B%E6%A9%8B%E8%B7%91%E8%B7%91%E4%BA%BA", "map_external": "https://www.google.com/maps/search/?api=1&query=%E5%BF%83%E9%BD%8B%E6%A9%8B%E8%B7%91%E8%B7%91%E4%BA%BA", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E5%BF%83%E9%BD%8B%E6%A9%8B%E8%B7%91%E8%B7%91%E4%BA%BA&travelmode=driving"}, {"text": "🎡 道頓堀摩天輪", "map_query": "道頓堀摩天輪 えびすタワー", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E9%81%93%E9%A0%93%E5%A0%80%E6%91%A9%E5%A4%A9%E8%BC%AA%20%E3%81%88%E3%81%B3%E3%81%99%E3%82%BF%E3%83%AF%E3%83%BC", "map_external": "https://www.google.com/maps/search/?api=1&query=%E9%81%93%E9%A0%93%E5%A0%80%E6%91%A9%E5%A4%A9%E8%BC%AA%20%E3%81%88%E3%81%B3%E3%81%99%E3%82%BF%E3%83%AF%E3%83%BC", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E9%81%93%E9%A0%93%E5%A0%80%E6%91%A9%E5%A4%A9%E8%BC%AA%20%E3%81%88%E3%81%B3%E3%81%99%E3%82%BF%E3%83%AF%E3%83%BC&travelmode=driving"}, {"text": "🍔 美國村", "map_query": "America-mura 大阪 美國村", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=America-mura%20%E5%A4%A7%E9%98%AA%20%E7%BE%8E%E5%9C%8B%E6%9D%91", "map_external": "https://www.google.com/maps/search/?api=1&query=America-mura%20%E5%A4%A7%E9%98%AA%20%E7%BE%8E%E5%9C%8B%E6%9D%91", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=America-mura%20%E5%A4%A7%E9%98%AA%20%E7%BE%8E%E5%9C%8B%E6%9D%91&travelmode=driving"}, {"text": "🛍️ 大丸百貨心齋橋", "map_query": "大丸心斎橋店", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E5%A4%A7%E4%B8%B8%E5%BF%83%E6%96%8E%E6%A9%8B%E5%BA%97", "map_external": "https://www.google.com/maps/search/?api=1&query=%E5%A4%A7%E4%B8%B8%E5%BF%83%E6%96%8E%E6%A9%8B%E5%BA%97", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E5%A4%A7%E4%B8%B8%E5%BF%83%E6%96%8E%E6%A9%8B%E5%BA%97&travelmode=driving"}, {"text": "🎈 C-pla 扭蛋", "map_query": "C-pla 心斎橋筋店", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=C-pla%20%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%BA%97", "map_external": "https://www.google.com/maps/search/?api=1&query=C-pla%20%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%BA%97", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=C-pla%20%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%BA%97&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%BF%83%E9%BD%8B%E6%A9%8B", "map_external": "https://www.google.com/maps/search/?api=1&query=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%BF%83%E9%BD%8B%E6%A9%8B", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%BF%83%E9%BD%8B%E6%A9%8B&travelmode=driving"}]}, {"city_hint": "Osaka", "title": "12/6（六） Day2 大阪市-NEW_💎", "events": [{"start": "08:00", "end": "09:30", "icon": "🍣", "title": "黑門市場 Kuromon Ichiba Market", "map_query": "黑門市場 Kuromon Ichiba Market", "subitems": [{"text": "石橋食品關東煮 Ishibashi Shokuhin", "map_query": "Ishibashi Shokuhin Kuromon", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Ishibashi%20Shokuhin%20Kuromon", "map_external": "https://www.google.com/maps/search/?api=1&query=Ishibashi%20Shokuhin%20Kuromon", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Ishibashi%20Shokuhin%20Kuromon&travelmode=driving"}, {"text": "黒門すし酒場 花神総本店", "map_query": "黒門すし酒場 花神総本店", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E9%BB%92%E9%96%80%E3%81%99%E3%81%97%E9%85%92%E5%A0%B4%20%E8%8A%B1%E7%A5%9E%E7%B7%8F%E6%9C%AC%E5%BA%97", "map_external": "https://www.google.com/maps/search/?api=1&query=%E9%BB%92%E9%96%80%E3%81%99%E3%81%97%E9%85%92%E5%A0%B4%20%E8%8A%B1%E7%A5%9E%E7%B7%8F%E6%9C%AC%E5%BA%97", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E9%BB%92%E9%96%80%E3%81%99%E3%81%97%E9%85%92%E5%A0%B4%20%E8%8A%B1%E7%A5%9E%E7%B7%8F%E6%9C%AC%E5%BA%97&travelmode=driving"}, {"text": "まぐろや Maguroya Kurogin", "map_query": "Maguroya Kurogin Kuromon", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Maguroya%20Kurogin%20Kuromon", "map_external": "https://www.google.com/maps/search/?api=1&query=Maguroya%20Kurogin%20Kuromon", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Maguroya%20Kurogin%20Kuromon&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E9%BB%91%E9%96%80%E5%B8%82%E5%A0%B4%20Kuromon%20Ichiba%20Market", "map_external": "https://www.google.com/maps/search/?api=1&query=%E9%BB%91%E9%96%80%E5%B8%82%E5%A0%B4%20Kuromon%20Ichiba%20Market", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E9%BB%91%E9%96%80%E5%B8%82%E5%A0%B4%20Kuromon%20Ichiba%20Market&travelmode=driving"}, {"start": "10:00", "end": "13:00", "icon": "🏯", "title": "大阪城 Osaka Castle", "note": "日本橋→中央綠線→谷町四丁目 約20mins", "map_query": "大阪城 Osaka Castle", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E5%A4%A7%E9%98%AA%E5%9F%8E%20Osaka%20Castle", "map_external": "https://www.google.com/maps/search/?api=1&query=%E5%A4%A7%E9%98%AA%E5%9F%8E%20Osaka%20Castle", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E5%A4%A7%E9%98%AA%E5%9F%8E%20Osaka%20Castle&travelmode=driving"}, {"start": "13:30", "end": "15:30", "icon": "🛝", "title": "新世界 & 通天閣", "map_query": "新世界 通天閣 Shinsekai Tsutenkaku", "subitems": [{"text": "新世界本通商店街 Shinsekai", "map_query": "Shinsekai Osaka", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Shinsekai%20Osaka", "map_external": "https://www.google.com/maps/search/?api=1&query=Shinsekai%20Osaka", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Shinsekai%20Osaka&travelmode=driving"}, {"text": "達摩串炸 Kushikatsu Daruma", "map_query": "Kushikatsu Daruma Shinsekai", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Kushikatsu%20Daruma%20Shinsekai", "map_external": "https://www.google.com/maps/search/?api=1&query=Kushikatsu%20Daruma%20Shinsekai", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Kushikatsu%20Daruma%20Shinsekai&travelmode=driving"}, {"text": "Usagiya", "map_query": "Usagiya Shinsekai", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Usagiya%20Shinsekai", "map_external": "https://www.google.com/maps/search/?api=1&query=Usagiya%20Shinsekai", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Usagiya%20Shinsekai&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E6%96%B0%E4%B8%96%E7%95%8C%20%E9%80%9A%E5%A4%A9%E9%96%A3%20Shinsekai%20Tsutenkaku", "map_external": "https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E4%B8%96%E7%95%8C%20%E9%80%9A%E5%A4%A9%E9%96%A3%20Shinsekai%20Tsutenkaku", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E6%96%B0%E4%B8%96%E7%95%8C%20%E9%80%9A%E5%A4%A9%E9%96%A3%20Shinsekai%20Tsutenkaku&travelmode=driving"}, {"start": "16:00", "end": "21:00", "icon": "💎", "title": "Seventeen in 大阪京瓷巨蛋", "note": "16:00可入場\n記得帶票券", "map_query": "京瓷巨蛋 Kyocera Dome Osaka", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E4%BA%AC%E7%93%B7%E5%B7%A8%E8%9B%8B%20Kyocera%20Dome%20Osaka", "map_external": "https://www.google.com/maps/search/?api=1&query=%E4%BA%AC%E7%93%B7%E5%B7%A8%E8%9B%8B%20Kyocera%20Dome%20Osaka", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E4%BA%AC%E7%93%B7%E5%B7%A8%E8%9B%8B%20Kyocera%20Dome%20Osaka&travelmode=driving"}, {"start": "13:00", "icon": "⏰", "title": "畫飛機位子提醒", "note": "13:00 開放劃位", "important": true}]}, {"city_hint": "Osaka", "title": "12/7（日） Day3 勝尾寺-梅田", "events": [{"start": "08:00", "end": "09:00", "icon": "🍳", "title": "早午餐", "subitems": [{"text": "麥當勞 McDonald's", "map_query": "McDonald's Shinsaibashi", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=McDonald%27s%20Shinsaibashi", "map_external": "https://www.google.com/maps/search/?api=1&query=McDonald%27s%20Shinsaibashi", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=McDonald%27s%20Shinsaibashi&travelmode=driving"}, {"text": "客美多 Komeda Coffee 西心齋橋店", "map_query": "Komeda Coffee Shinsaibashi", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Komeda%20Coffee%20Shinsaibashi", "map_external": "https://www.google.com/maps/search/?api=1&query=Komeda%20Coffee%20Shinsaibashi", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Komeda%20Coffee%20Shinsaibashi&travelmode=driving"}, {"text": "Lawson（飯店旁）", "map_query": "Lawson Shinsaibashi", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Lawson%20Shinsaibashi", "map_external": "https://www.google.com/maps/search/?api=1&query=Lawson%20Shinsaibashi", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Lawson%20Shinsaibashi&travelmode=driving"}]}, {"start": "11:00", "end": "14:30", "icon": "⛩️", "title": "勝尾寺 Katsuo-ji Temple", "note": "去程10:40/11:20\n回程13:48/14:48\n門票500¥\n預計停留1.5hr", "map_query": "勝尾寺 Katsuo-ji Temple", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E5%8B%9D%E5%B0%BE%E5%AF%BA%20Katsuo-ji%20Temple", "map_external": "https://www.google.com/maps/search/?api=1&query=%E5%8B%9D%E5%B0%BE%E5%AF%BA%20Katsuo-ji%20Temple", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E5%8B%9D%E5%B0%BE%E5%AF%BA%20Katsuo-ji%20Temple&travelmode=driving"}, {"start": "15:00", "end": "16:30", "icon": "🥣", "title": "梅田 午餐", "map_query": "Umeda Osaka lunch", "subitems": [{"text": "epais 炸豬排", "map_query": "epais Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=epais%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=epais%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=epais%20Umeda&travelmode=driving"}, {"text": "new babe 炸豬排", "map_query": "New Babe Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=New%20Babe%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=New%20Babe%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=New%20Babe%20Umeda&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Umeda%20Osaka%20lunch", "map_external": "https://www.google.com/maps/search/?api=1&query=Umeda%20Osaka%20lunch", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Umeda%20Osaka%20lunch&travelmode=driving"}, {"start": "17:00", "end": "19:00", "icon": "🍰", "title": "梅田 甜點 & 逛街", "map_query": "梅田 甜點 逛街", "subitems": [{"text": "Grenier 千層酥", "map_query": "Grenier Umeda Osaka", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Grenier%20Umeda%20Osaka", "map_external": "https://www.google.com/maps/search/?api=1&query=Grenier%20Umeda%20Osaka", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Grenier%20Umeda%20Osaka&travelmode=driving"}, {"text": "HARBS", "map_query": "HARBS Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=HARBS%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=HARBS%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=HARBS%20Umeda&travelmode=driving"}, {"text": "LUCUA", "map_query": "LUCUA Osaka", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=LUCUA%20Osaka", "map_external": "https://www.google.com/maps/search/?api=1&query=LUCUA%20Osaka", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=LUCUA%20Osaka&travelmode=driving"}, {"text": "HEP FIVE", "map_query": "HEP FIVE Osaka", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=HEP%20FIVE%20Osaka", "map_external": "https://www.google.com/maps/search/?api=1&query=HEP%20FIVE%20Osaka", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=HEP%20FIVE%20Osaka&travelmode=driving"}, {"text": "大丸梅田（吉伊卡哇）", "map_query": "Daimaru Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Daimaru%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=Daimaru%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Daimaru%20Umeda&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E6%A2%85%E7%94%B0%20%E7%94%9C%E9%BB%9E%20%E9%80%9B%E8%A1%97", "map_external": "https://www.google.com/maps/search/?api=1&query=%E6%A2%85%E7%94%B0%20%E7%94%9C%E9%BB%9E%20%E9%80%9B%E8%A1%97", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E6%A2%85%E7%94%B0%20%E7%94%9C%E9%BB%9E%20%E9%80%9B%E8%A1%97&travelmode=driving"}, {"start": "19:00", "icon": "🥣", "title": "梅田 晚餐", "map_query": "梅田 晚餐", "subitems": [{"text": "しゃぶ禪 壽喜燒", "map_query": "Shabuzen Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Shabuzen%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=Shabuzen%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Shabuzen%20Umeda&travelmode=driving"}, {"text": "炸牛元村", "map_query": "Gyukatsu Motomura Umeda", "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=Gyukatsu%20Motomura%20Umeda", "map_external": "https://www.google.com/maps/search/?api=1&query=Gyukatsu%20Motomura%20Umeda", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=Gyukatsu%20Motomura%20Umeda&travelmode=driving"}], "map_embed": "https://www.google.com/maps/embed/v1/place?key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY&q=%E6%A2%85%E7%94%B0%20%E6%99%9A%E9%A4%90", "map_external": "https://www.google.com/maps/search/?api=1&query=%E6%A2%85%E7%94%B0%20%E6%99%9A%E9%A4%90", "nav_external": "https://www.google.com/maps/dir/?api=1&destination=%E6%A2%85%E7%94%B0%20%E6%99%9A%E9%A4%90&travelmode=driving"}]}, {"city_hint": "Osaka", "title": "12/8（一） Day4 回家🇹🇼", "events": [{"start": "08:00", "icon": "🚄", "title": "退房前往機場", "note": "南海特急 → 關西機場\n8:00 / 8:30 / 9:00", "important": true}, {"start": "12:55", "end": "15:05", "icon": "✈️", "title": "回程班機 BR131", "note": "KIX(T1)12:55 → TPE(T2)15:05"}]}]};
-
-/* --------------------------------------------------
-   Tabs：絲滑切換
--------------------------------------------------- */
-function showTab(tab){
-  const showItin = (tab === "itin");
-  const itinBtn = document.getElementById("tab-itin");
-  const toolsBtn = document.getElementById("tab-tools");
-  const main = document.getElementById("main");
-  const tools = document.getElementById("tools");
-
-  itinBtn.classList.toggle("active", showItin);
-  toolsBtn.classList.toggle("active", !showItin);
-  main.classList.toggle("active", showItin);
-  tools.classList.toggle("active", !showItin);
-}
-
-/* --------------------------------------------------
-   Itinerary 模組
--------------------------------------------------- */
-function toMinutes(t){
-  if(!t) return 0;
-  const parts = t.split(":");
-  const h = Number(parts[0]||0), m = Number(parts[1]||0);
-  return h*60 + m;
-}
-
-function renderSubitem(si){
-  const mapQuery = si.map_query || si.text || "地圖";
-  const mapBtn = mapQuery ? `<button class="btn map" onclick="event.stopPropagation(); openMapModal('${escapeJs(si.text||'地圖')}','${escapeJs(mapQuery)}')">地圖</button>` : "";
-  const navBtn = si.nav_external ? `<a class="btn nav" href="${si.nav_external}" target="_blank" rel="noopener">導航</a>` : "";
-  const searchBtn = si.map_query ? `<a class="btn search" href="https://www.google.com/search?q=${encodeURIComponent(si.map_query+' 攻略')}" target="_blank" rel="noopener">攻略</a>` : "";
-  return `
-    <div class="subitem">
-      <div>${escapeHtml(si.text||"")}</div>
-      <div class="flex gap-1">${mapBtn}${navBtn}${searchBtn}</div>
-    </div>`;
-}
-
-function renderEvent(ev){
-  const time = ev.end ? `${ev.start}–${ev.end}` : (ev.start||"");
-  const impBadge = ev.important ? `<span class="important-badge">Important</span>` : "";
-  const mapQuery = ev.map_query || ev.title || "地圖";
-  const mapBtn = ev.map_query ? `<button class="btn map" onclick="event.stopPropagation(); openMapModal('${escapeJs(ev.title||'地圖')}','${escapeJs(mapQuery)}')">地圖</button>` : "";
-  const navBtn = ev.nav_external ? `<a class="btn nav" href="${ev.nav_external}" target="_blank" rel="noopener">導航</a>` : "";
-  const searchBtn = ev.map_query ? `<a class="btn search" href="https://www.google.com/search?q=${encodeURIComponent(ev.map_query+' 攻略')}" target="_blank" rel="noopener">攻略</a>` : "";
-  const subHtml = (ev.subitems||[]).length ? `<div class="sub">${(ev.subitems||[]).map(renderSubitem).join("")}</div>` : "";
-  return `
-  <article class="card ${ev.important?'important':''}">
-    <div class="time">${time} ${impBadge}</div>
-    <div class="row">
-      <div class="h3">${escapeHtml(ev.icon||"")} ${escapeHtml(ev.title||"")}</div>
-      <div class="flex gap-2">${mapBtn}${navBtn}${searchBtn}</div>
-    </div>
-    ${ev.note?`<div class="note">${escapeHtml(ev.note)}</div>`:""}
-    ${subHtml}
-  </article>`;
-}
-
-function renderDay(day, di){
-  const events = (day.events||[]).slice().sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
-  const imps = events.filter(e=>e.important);
-  const impBox = imps.length ? `
-    <div class="today-imp show" id="todayImp-${di}">
-      🔶 今日提醒<br>
-      ${imps.map(e=>`${escapeHtml(e.start||'')} — ${escapeHtml(e.title||'')}`).join("<br>")}
-    </div>` : `<div class="today-imp" id="todayImp-${di}"></div>`;
-
-  const statsHtml = `
-    <div class="day-stats">
-      今日共 ${events.length} 個行程 · 重要提醒 ${imps.length} 個
-    </div>`;
-
-  return `
-    <section class="day" id="day-${di}">
-      <div class="dayhead">
-        <div class="daytitle">
-          <span class="daytitle-text">${escapeHtml(day.title||"")}</span>
-          <span class="weather" id="weather-${di}">天氣讀取中…</span>
-        </div>
-        ${statsHtml}
-        ${impBox}
-      </div>
-      ${events.map(renderEvent).join("")}
-    </section>
-  `;
-}
-
-let currentDayIndex = 0;
-const DAY_KEY = "osakaActiveDayV11_5";
-
-function renderItinerary(){
-  const main = document.getElementById("main");
-  const savedDay = Number(localStorage.getItem(DAY_KEY));
-  const startDay = (!isNaN(savedDay) && savedDay>=0 && savedDay<DATA.days.length) ? savedDay : 0;
-  currentDayIndex = startDay;
-
-  main.innerHTML = `
-    <div class="pills">
-      <div class="pills-inner">
-        ${DATA.days.map((d,i)=>`<button class="pill ${i===startDay?'active':''}" onclick="showDay(${i})">Day${i+1}</button>`).join("")}
-      </div>
-    </div>
-    ${DATA.days.map((d,i)=>renderDay(d,i)).join("")}
-  `;
-  showDay(startDay);
-}
-
-function updateTodayImportant(activeIndex){
-  const boxes = document.querySelectorAll(".today-imp");
-  boxes.forEach((el,i)=>{
-    if(el.classList.contains("show")){
-      el.style.display = (i===activeIndex) ? "block" : "none";
-    }else{
-      el.style.display = "none";
-    }
-  });
-}
-
-function showDay(di){
-  const prev = currentDayIndex;
-  const scrollY = window.scrollY || window.pageYOffset || 0;
-  localStorage.setItem(`osakaScrollDay-${prev}`, String(scrollY));
-
-  document.querySelectorAll(".day").forEach((el,i)=>el.classList.toggle("active", i===di));
-  updateTodayImportant(di);
-  document.querySelectorAll(".pill").forEach((el,i)=>el.classList.toggle("active", i===di));
-
-  currentDayIndex = di;
-  localStorage.setItem(DAY_KEY, String(di));
-
-  const saved = Number(localStorage.getItem(`osakaScrollDay-${di}`));
-  const targetY = isNaN(saved) ? 0 : saved;
-  window.scrollTo({top:targetY, behavior:"smooth"});
-}
-
-/* --------------------------------------------------
-   Weather（只顯示溫度 + 降雨機率）
--------------------------------------------------- */
-async function loadWeatherForDay(day, di){
-  const box = document.getElementById("weather-"+di);
-  if(!box) return;
-  const city = (day.city_hint || "Osaka").trim() || "Osaka";
-  const cacheKey = "osakaWeatherCacheV11_5";
-
-  try{
-    let cache = {};
-    try{
-      const raw = localStorage.getItem(cacheKey);
-      cache = raw ? JSON.parse(raw) : {};
-    }catch(e){
-      cache = {};
-    }
-    const now = Date.now();
-    if(cache[city] && (now - cache[city].ts) < 15*60*1000){
-      const c = cache[city];
-      box.textContent = `🌡️ ${c.t}°C ｜ 🌧️ ${c.rain}%`;
-      return;
-    }
-
-    const q = encodeURIComponent(city);
-    const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`, {
-      headers:{"Accept-Language":"ja,en,zh-TW"}
-    }).then(r=>r.json());
-    if(!geo || !geo[0]) throw new Error("geo");
-    const lat = geo[0].lat, lon = geo[0].lon;
-
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation_probability&timezone=Asia%2FTokyo`).then(r=>r.json());
-    const t = w?.current?.temperature_2m ?? "--";
-    const rain = w?.current?.precipitation_probability ?? "--";
-
-    box.textContent = `🌡️ ${t}°C ｜ 🌧️ ${rain}%`;
-
-    cache[city] = {ts:now, t, rain};
-    localStorage.setItem(cacheKey, JSON.stringify(cache));
-  }catch(e){
-    console.error(e);
-    box.textContent = "天氣暫時讀不到";
+  } catch (err) {
+    console.warn("Wiki Image error:", err);
+    return null;
   }
 }
 
-async function loadAllWeather(){
-  for(let i=0;i<DATA.days.length;i++){
-    loadWeatherForDay(DATA.days[i], i);
+/* ---------------------------------------------------------
+   台銀匯率抓取
+--------------------------------------------------------- */
+let rateJPYtoTWD = 0;
+
+async function fetchRate() {
+  try {
+    const res = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW");
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+
+    const rows = doc.querySelectorAll("tbody tr");
+    for (let r of rows) {
+      if (r.innerText.includes("JPY")) {
+        const tds = r.querySelectorAll("td");
+        rateJPYtoTWD = Number(tds[5].innerText);
+      }
+    }
+
+    document.getElementById("rate-info").textContent =
+      `目前匯率：約 1 JPY = ${rateJPYtoTWD} TWD`;
+
+  } catch {
+    rateJPYtoTWD = 0.2;
+    document.getElementById("rate-info").textContent =
+      "匯率讀取失敗，暫用 0.2 計算";
   }
 }
 
-/* --------------------------------------------------
-   記帳（共同記帳版）
--------------------------------------------------- */
-const FX_KEY = "osakaFxRateV11_5";
-const PAYERS = ["羊","熙"];
-let budgetItems = [];
-const budgetState = {};
+/* ---------------------------------------------------------
+   行程資料（你之後可以擴充 Day3 / Day4）
+--------------------------------------------------------- */
+const itinerary = [
+  {
+    dayId: "day1",
+    date: "12/5（五）",
+    highlight: "大丸百貨 20:00 關門，要逛先逛百貨！",
+    events: [
+      {
+        time: "02:30–06:00",
+        title: "GK050 桃園 → 關西",
+        placeName: "Kansai Airport",
+        description: "紅眼班機，抵達後搭南海特急至難波。",
+        mapsQuery: "Kansai Airport"
+      },
+      {
+        time: "07:30–09:00",
+        title: "南海特急 → 難波",
+        placeName: "Nankai Namba Station",
+        description: "班次多、現場買也可以。",
+        mapsQuery: "Nankai Namba Station"
+      },
+      {
+        time: "10:30–12:30",
+        title: "大阪城散策",
+        placeName: "Osaka Castle",
+        description: "散步拍照。",
+        mapsQuery: "Osaka Castle"
+      }
+    ]
+  },
 
-function renderTools(){
-  const tools = document.getElementById("tools");
-  tools.innerHTML = `
-    <div class="tools-card">
-      <div class="tools-title">🧾 記帳 / 預算（JPY → TWD 自動結算）</div>
-      <div class="muted">
-        共同記帳：付款人固定「羊、熙」，資料會同步到雲端（Supabase）。
-      </div>
+  {
+    dayId: "day2",
+    date: "12/6（六）",
+    highlight: "16:00 Seventeen 京瓷巨蛋入場！",
+    events: [
+      {
+        time: "09:00–10:30",
+        title: "黑門市場",
+        placeName: "Kuromon Ichiba Market",
+        description: "吃海鮮、鮪魚、串物。",
+        mapsQuery: "Kuromon Ichiba Market"
+      },
+      {
+        time: "13:30–15:30",
+        title: "新世界通天閣",
+        placeName: "Tsutenkaku Tower",
+        description: "串炸、Usagiya。",
+        mapsQuery: "Tsutenkaku Tower"
+      },
+      {
+        time: "16:00–21:00",
+        title: "Seventeen 京瓷巨蛋",
+        placeName: "Kyocera Dome Osaka",
+        description: "入場 16:00，21:00 結束。",
+        mapsQuery: "Kyocera Dome Osaka"
+      }
+    ]
+  }
+];
 
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <div>
-          <div class="muted mb-1">JPY→TWD 匯率</div>
-          <input id="fxRateInput" type="number" step="0.001" inputmode="decimal" />
-        </div>
-        <div class="flex items-end">
-          <button class="btn map w-full justify-center" onclick="resetBudget()">清空全部</button>
-        </div>
-      </div>
+/* ---------------------------------------------------------
+   渲染行程頁籤
+--------------------------------------------------------- */
+function renderDayChips() {
+  const wrap = document.getElementById("day-switcher");
+  wrap.innerHTML = "";
 
-      <div id="budget-list" class="mt-2"></div>
+  itinerary.forEach((d, i) => {
+    const chip = document.createElement("button");
+    chip.className = "day-chip";
+    chip.textContent = d.date;
+    if (i === 0) chip.classList.add("active");
 
-      <div class="mt-2 flex gap-2">
-        <button class="btn map" onclick="addBudgetRow()">新增項目</button>
-        <button class="btn nav" onclick="reloadBudget()">重新整理</button>
-      </div>
+    chip.onclick = () => {
+      document.querySelectorAll(".day-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      renderDay(d.dayId);
+    };
 
-      <div id="budget-total" class="budget-total"></div>
-      <div id="budget-summary" class="mt-2 text-sm"></div>
-      <div id="budget-settlement" class="mt-2 text-sm font-semibold"></div>
-      <div id="budget-status" class="mt-2 text-xs text-slate-500"></div>
-    </div>
-  `;
-  initFxRate();
-  initBudget();
+    wrap.appendChild(chip);
+  });
 }
 
-function initFxRate(){
-  const fx = document.getElementById("fxRateInput");
-  const saved = Number(localStorage.getItem(FX_KEY));
-  fx.value = saved || 0.21;
-  fx.oninput = () => {
-    localStorage.setItem(FX_KEY, String(Number(fx.value||0)));
-    calcSettlement();
+function renderDay(dayId) {
+  const day = itinerary.find(d => d.dayId === dayId);
+  const box = document.getElementById("day-content");
+  box.innerHTML = "";
+
+  const h = document.createElement("div");
+  h.className = "highlight-card";
+  h.textContent = day.highlight;
+  box.appendChild(h);
+
+  day.events.forEach(ev => {
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.innerHTML = `
+      <div class="event-time">${ev.time}</div>
+      <div class="event-title">${ev.title}</div>
+      <div class="event-place">${ev.placeName}</div>
+    `;
+    card.onclick = () => openModal(ev, day.date);
+    box.appendChild(card);
+  });
+}
+
+/* ---------------------------------------------------------
+   Modal（含 Wikipedia 圖片）
+--------------------------------------------------------- */
+const modalBackdrop = document.getElementById("modal-backdrop");
+const modalImg = document.getElementById("modal-img");
+const modalTitle = document.getElementById("modal-title");
+const modalSub = document.getElementById("modal-sub");
+const modalDesc = document.getElementById("modal-desc");
+const modalNav = document.getElementById("modal-nav");
+const modalClose = document.getElementById("modal-close");
+
+async function openModal(ev, date) {
+  modalTitle.textContent = ev.title;
+  modalSub.textContent = `${date} · ${ev.placeName}`;
+  modalDesc.textContent = ev.description;
+
+  const img = await fetchWikipediaImage(ev.placeName);
+  modalImg.src = img || "https://dummyimage.com/800x600/cccccc/000000&text=" + 
+                  encodeURIComponent(ev.placeName);
+
+  modalNav.onclick = () => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.mapsQuery)}`);
   };
+
+  modalBackdrop.classList.add("show");
 }
 
-function setBudgetStatus(msg){
-  const box = document.getElementById("budget-status");
-  if(box) box.textContent = msg || "";
+modalClose.onclick = () => modalBackdrop.classList.remove("show");
+modalBackdrop.onclick = e => {
+  if (e.target === modalBackdrop) modalBackdrop.classList.remove("show");
+};
+
+/* ---------------------------------------------------------
+   房號儲存
+--------------------------------------------------------- */
+const roomInput = document.getElementById("room-number");
+roomInput.value = localStorage.getItem("osaka_room") || "";
+roomInput.oninput = () => {
+  localStorage.setItem("osaka_room", roomInput.value);
+};
+/* ---------------------------------------------------------
+   Supabase Init
+--------------------------------------------------------- */
+const supabase = window.supabase.createClient(
+  "https://fmrkkwlmtxzeytjcllag.supabase.co",
+  "sb_publishable_8MblOgh8PGTV7Xq3Eg_LNg_0RUtV7cR"
+);
+
+/* ---------------------------------------------------------
+   記帳：載入清單
+--------------------------------------------------------- */
+async function loadExpenses(){
+  const { data } = await supabase
+    .from("budgets")
+    .select("*")
+    .eq("trip_id", "osaka-2024")
+    .order("created_at", { ascending: true });
+
+  renderExpenses(data || []);
 }
 
-/* ---- Supabase 相關 ---- */
-async function fetchBudgetFromSupabase(){
-  if(!supabaseClient){
-    setBudgetStatus("⚠️ Supabase 未設定，僅本機可用。");
-    return [];
-  }
-  setBudgetStatus("雲端資料載入中…");
-  const { data, error } = await supabaseClient
-    .from('budgets')
-    .select('*')
-    .eq('trip_id', TRIP_ID)
-    .order('created_at', { ascending: true });
+/* ---------------------------------------------------------
+   記帳：渲染列表 + 結算
+--------------------------------------------------------- */
+function renderExpenses(rows){
+  let html = "";
+  let totalJPY = 0;
+  let byPayer = { 羊:0, 熙:0 };
 
-  if(error){
-    console.error(error);
-    setBudgetStatus("⚠️ 雲端讀取失敗，請稍後重試。");
-    return [];
-  }
-  setBudgetStatus("✅ 已與雲端同步。");
-  return data || [];
-}
+  rows.forEach(r => {
+    const jpy = Number(r.amount);
+    const twd = Math.round(jpy * rateJPYtoTWD);
 
-async function insertBudgetItem(note="", amount=null, payer=PAYERS[0]){
-  if(!supabaseClient) return;
-  const { error } = await supabaseClient
-    .from('budgets')
-    .insert([{ trip_id: TRIP_ID, note, amount: amount === null ? null : Number(amount)||0, payer }]);
-  if(error) console.error(error);
-}
+    totalJPY += jpy;
+    byPayer[r.payer] += twd;
 
-async function updateBudgetItem(id, fields){
-  if(!supabaseClient) return;
-  const { error } = await supabaseClient
-    .from('budgets')
-    .update(fields)
-    .eq('id', id);
-  if(error) console.error(error);
-}
-
-async function deleteBudgetItem(id){
-  if(!supabaseClient) return;
-  const { error } = await supabaseClient
-    .from('budgets')
-    .delete()
-    .eq('id', id);
-  if(error) console.error(error);
-}
-
-async function clearAllBudget(){
-  if(!supabaseClient) return;
-  const { error } = await supabaseClient
-    .from('budgets')
-    .delete()
-    .eq('trip_id', TRIP_ID);
-  if(error) console.error(error);
-}
-
-/* ---- 記帳操作流程 ---- */
-async function initBudget(){
-  await reloadBudget();
-  setupBudgetRealtime();
-}
-
-async function reloadBudget(){
-  budgetItems = await fetchBudgetFromSupabase();
-  renderBudget();
-  calcSettlement();
-}
-
-/* 折疊卡片 render */
-function renderBudgetItem(it){
-  if(!budgetState[it.id]){
-    budgetState[it.id] = { expanded:false, locked:true };
-  }
-  const st = budgetState[it.id];
-
-  if((!it.note || it.note==="") && (it.amount === null || it.amount === undefined || Number(it.amount)===0)){
-    st.expanded = true;
-    st.locked = false;
-  }
-
-  const amountNum = Number(it.amount)||0;
-  const payer = it.payer || PAYERS[0];
-  const title = it.note || "（未填項目）";
-
-  const expandedClass = st.expanded ? "open" : "";
-  const lockLabel = st.locked ? "已鎖定" : "編輯中";
-  const fx = Number(localStorage.getItem(FX_KEY)||0.21);
-  const metaJPY = amountNum.toLocaleString();
-  const metaTWD = (amountNum*fx).toFixed(0);
-  const inputAmountValue = (it.amount === null || it.amount === undefined || it.amount === "") ? "" : amountNum;
-
-  return `
-    <div class="budget-card ${expandedClass}" data-id="${it.id}">
-      <button class="budget-header" onclick="toggleBudgetExpand('${it.id}')">
-        <div class="budget-title">
-          ${escapeHtml(title)}
+    html += `
+      <div class="expense-item" id="exp-${r.id}">
+        <div>
+          ${r.payer}：${jpy} JPY ≈ ${twd} TWD
+          <div class="expense-note">${r.note || ""}</div>
         </div>
-        <div class="budget-meta">
-          <div>${metaJPY} JPY / ${metaTWD} TWD</div>
-          <div>${escapeHtml(payer)} · ${lockLabel}
-            <span class="icon-rotate inline-block ml-1">›</span>
-          </div>
-        </div>
-      </button>
-      <div class="budget-body">
-        <div class="budget-row-fields">
-          <input
-            placeholder="項目"
-            value="${escapeAttr(it.note||"")}"
-            ${st.locked ? "readonly" : ""}
-            oninput="onBudgetDraftChange('${it.id}','note',this.value)"
-          >
-          <input
-            placeholder="金額(JPY)"
-            type="number"
-            inputmode="decimal"
-            value="${inputAmountValue}"
-            ${st.locked ? "readonly" : ""}
-            oninput="onBudgetDraftChange('${it.id}','amount',this.value)"
-          >
-          <select
-            ${st.locked ? "disabled" : ""}
-            onchange="onBudgetDraftChange('${it.id}','payer',this.value)"
-          >
-            ${PAYERS.map(p=>`<option value="${p}" ${p===payer?"selected":""}>${p}</option>`).join("")}
-          </select>
-        </div>
-        <div class="budget-actions">
-          <button class="btn" onclick="enableBudgetEdit('${it.id}')">✏️ 編輯</button>
-          <button class="btn nav flex-1 justify-center" onclick="saveBudget('${it.id}')">💾 儲存</button>
-          <button class="btn flex-1 justify-center" onclick="deleteBudget('${it.id}')">🗑 刪除</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderBudget(){
-  const list = document.getElementById("budget-list");
-  if(!list) return;
-  list.innerHTML = (budgetItems||[]).map(renderBudgetItem).join("");
-
-  const total = (budgetItems||[]).reduce((s,it)=>s+(Number(it.amount)||0),0);
-  const totalBox = document.getElementById("budget-total");
-  if(totalBox) totalBox.textContent = `合計：${total.toLocaleString()} JPY`;
-}
-
-function getBudgetIndex(id){
-  return budgetItems.findIndex(x=>x.id === id);
-}
-
-function onBudgetDraftChange(id, field, value){
-  const idx = getBudgetIndex(id);
-  if(idx===-1) return;
-  if(field==="amount"){
-    budgetItems[idx].amount = (value === "" ? null : Number(value||0));
-  }else{
-    budgetItems[idx][field] = value;
-  }
-  calcSettlement();
-}
-
-function toggleBudgetExpand(id){
-  if(!budgetState[id]) budgetState[id] = {expanded:false, locked:true};
-  budgetState[id].expanded = !budgetState[id].expanded;
-  renderBudget();
-}
-
-function enableBudgetEdit(id){
-  if(!budgetState[id]) budgetState[id] = {expanded:true, locked:false};
-  budgetState[id].locked = false;
-  budgetState[id].expanded = true;
-  renderBudget();
-
-  setTimeout(()=>{
-    const card = document.querySelector(`.budget-card[data-id="${id}"]`);
-    if(!card) return;
-    const input = card.querySelector("input[placeholder='項目']");
-    if(input) input.focus();
-  },0);
-}
-
-async function saveBudget(id){
-  const idx = getBudgetIndex(id);
-  if(idx===-1) return;
-  const it = budgetItems[idx];
-  const note = it.note || "";
-  const amount = (it.amount === null || it.amount === undefined || it.amount === "") ? null : Number(it.amount)||0;
-  const payer = (it.payer || PAYERS[0]).trim() || PAYERS[0];
-
-  await updateBudgetItem(id, { note, amount, payer });
-
-  if(!budgetState[id]) budgetState[id] = {expanded:true, locked:true};
-  budgetState[id].locked = true;
-
-  renderBudget();
-  calcSettlement();
-}
-
-async function addBudgetRow(){
-  await insertBudgetItem("", null, PAYERS[0]);
-  await reloadBudget();
-}
-
-async function resetBudget(){
-  if(!confirm("確定要清空雲端記帳嗎？")) return;
-  await clearAllBudget();
-  budgetItems = [];
-  for(const k in budgetState) delete budgetState[k];
-  renderBudget();
-  calcSettlement();
-}
-
-async function deleteBudget(id){
-  await deleteBudgetItem(id);
-  budgetItems = budgetItems.filter(x=>x.id !== id);
-  delete budgetState[id];
-  renderBudget();
-  calcSettlement();
-}
-
-/* ---- 結算邏輯 ---- */
-function calcSettlement(){
-  const items = budgetItems || [];
-  const fx = Number(localStorage.getItem(FX_KEY) || 0.21);
-  const totalJPY = items.reduce((s,it)=>s+(Number(it.amount)||0),0);
-  const members = PAYERS.slice();
-  const n = members.length;
-  const shareJPY = n ? totalJPY / n : 0;
-
-  const paidBy = Object.fromEntries(members.map(p=>[p,0]));
-  items.forEach(it=>{
-    const p = (it.payer||"").trim();
-    if(paidBy[p]!=null) paidBy[p] += Number(it.amount)||0;
-  });
-
-  const net = members.map(p=>({name:p, paid:paidBy[p], net:paidBy[p]-shareJPY}));
-  const creditors = net.filter(x=>x.net>0.01).sort((a,b)=>b.net-a.net);
-  const debtors = net.filter(x=>x.net<-0.01).sort((a,b)=>a.net-b.net);
-
-  const transfers = [];
-  let ci=0, di=0;
-  while(ci<creditors.length && di<debtors.length){
-    const c = creditors[ci], d = debtors[di];
-    const amt = Math.min(c.net, -d.net);
-    transfers.push({from:d.name, to:c.name, amount:amt});
-    c.net -= amt;
-    d.net += amt;
-    if(c.net<=0.01) ci++;
-    if(d.net>=-0.01) di++;
-  }
-
-  const sumBox = document.getElementById("budget-summary");
-  if(sumBox){
-    sumBox.innerHTML = `
-      <div class="mt-2">
-        <div class="font-extrabold">付款統計</div>
-        ${members.map(p=>`<div class="flex justify-between"><span>${escapeHtml(p)}</span><span class="font-black">${(paidBy[p]||0).toLocaleString()} JPY / ${(paidBy[p]*fx).toFixed(0)} TWD</span></div>`).join("")}
-        <div class="flex justify-between mt-1 border-t pt-1"><span>每人平均</span><span class="font-black">${shareJPY.toFixed(0)} JPY / ${(shareJPY*fx).toFixed(0)} TWD</span></div>
+        <div class="menu-btn" onclick="openMenu('${r.id}', event)">⋮</div>
       </div>
     `;
-  }
+  });
 
-  const setBox = document.getElementById("budget-settlement");
-  if(setBox){
-    if(!transfers.length){
-      setBox.innerHTML = `<div class="mt-2 font-extrabold">✅ 已平衡，不用互相轉帳</div>`;
-    }else{
-      setBox.innerHTML = `
-        <div class="mt-2 font-extrabold">結算建議</div>
-        ${transfers.map(t=>`<div class="flex justify-between"><span>${escapeHtml(t.from)} → ${escapeHtml(t.to)}</span><span class="font-black">${t.amount.toFixed(0)} JPY / ${(t.amount*fx).toFixed(0)} TWD</span></div>`).join("")}
-      `;
-    }
-  }
+  document.getElementById("expense-list").innerHTML = html;
 
-  const totalBox = document.getElementById("budget-total");
-  if(totalBox) totalBox.textContent = `合計：${totalJPY.toLocaleString()} JPY`;
+  const totalTWD = Math.round(totalJPY * rateJPYtoTWD);
+  document.getElementById("expense-total").textContent =
+    `總計：${totalJPY} JPY ／ ${totalTWD} TWD`;
+
+  /* --- AA 結算（方式 B，一句話） --- */
+  const each = Math.round(totalTWD / 2);
+  const diff = each - byPayer["熙"];
+
+  let result = "";
+  if (diff > 0) result = `熙 → 羊：${diff} TWD`;
+  else if (diff < 0) result = `羊 → 熙：${-diff} TWD`;
+  else result = `完全平分。`;
+
+  document.getElementById("settlement").textContent = result;
 }
 
-/* ---- Supabase Realtime：多裝置同步 ---- */
-function setupBudgetRealtime(){
-  if(!supabaseClient) return;
-  supabaseClient
-    .channel('budgets-channel')
-    .on(
-      'postgres_changes',
-      { event:'*', schema:'public', table:'budgets', filter:`trip_id=eq.${TRIP_ID}` },
-      () => { reloadBudget(); }
-    )
-    .subscribe();
-}
-/* --------------------------------------------------
-   Modal 通用：body 滾動鎖定
--------------------------------------------------- */
-function lockBodyScroll(){
-  document.body.classList.add('modal-open');
-}
-function unlockBodyScroll(){
-  document.body.classList.remove('modal-open');
-}
+/* ---------------------------------------------------------
+   記帳：三點選單
+--------------------------------------------------------- */
+function openMenu(id, event){
+  closeAllMenus();
 
-/* --------------------------------------------------
-   Map / Trip / Hotel Modal DOM 參照
--------------------------------------------------- */
-// Map
-const mapModal = document.getElementById("mapModal");
-const mapModalMap = document.getElementById("mapModalMap");
-const mapModalTitle = document.getElementById("mapModalTitle");
-
-// Trip
-const tripModal = document.getElementById("tripModal");
-const tripModalBody = document.getElementById("tripModalBody");
-const tripModalTitle = document.getElementById("tripModalTitle");
-
-// Hotel
-const hotelModal = document.getElementById("hotelModal");
-const ROOM_KEY = "osakaRoomNumberV11_5";
-
-/* --------------------------------------------------
-   通用：一次關閉全部 modal（避免互相蓋住）
--------------------------------------------------- */
-function closeAllModals(){
-  // 把三個 modal 都關掉
-  if (mapModal)  mapModal.classList.remove("show");
-  if (tripModal) tripModal.classList.remove("show");
-  if (hotelModal) hotelModal.classList.remove("show");
-
-  // 清掉 iframe 內容，避免下次重複載入怪怪的
-  if (mapModalMap)   mapModalMap.innerHTML = "";
-  if (tripModalBody) tripModalBody.innerHTML = "";
-
-  // 解鎖 body 捲動
-  unlockBodyScroll();
-}
-
-
-/* --------------------------------------------------
-   Map Modal（用 query → Google Maps）
--------------------------------------------------- */
-/* --------------------------------------------------
-   Map Modal（C2：靜態地圖 + 外部連結）
--------------------------------------------------- */
-function openMapModal(title, query){
-  // 關閉其他 modal 避免堆疊
-  if (hotelModal) hotelModal.classList.remove("show");
-  if (tripModal)  tripModal.classList.remove("show");
-
-  mapModalTitle.textContent = title || "地圖";
-
-  const q = (query || title || "Osaka").trim();
-
-  // 🔵 Apple Maps 連結
-  const appleURL = `https://maps.apple.com/?q=${encodeURIComponent(q)}`;
-
-  // 🔴 Google Maps 連結（搜尋）
-  const googleURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-
-  // 🟢 Google 搜尋（攻略）
-  const searchURL = `https://www.google.com/search?q=${encodeURIComponent(q + " 攻略")}`;
-
-  // 🗺️ 靜態地圖圖片（使用 Google 靜態圖 API-free 模式）
-  const staticMapURL = 
-    `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(q)}&zoom=15&size=600x350&markers=color:red|${encodeURIComponent(q)}&key=AIzaSyA6UWf1nf2j8aYSPlYytWaU4cRQbnPdFuY`;
-
-  // ❗保證永遠顯示 → 如果 static map 不能載，就 fallback 成文字
-  mapModalMap.innerHTML = `
-    <div class="w-full h-full flex flex-col bg-black/90 overflow-y-auto">
-
-      <div class="p-3 text-white font-bold text-sm border-b border-white/20">
-        ${escapeHtml(title || q)}
-      </div>
-
-      <img 
-        src="${staticMapURL}"
-        class="w-full h-auto"
-        style="background:#111;"
-        onerror="this.outerHTML='<div class=\\'text-white p-4 text-center\\'>地圖圖片無法載入</div>'"
-      >
-
-      <div class="p-3 flex flex-col gap-2">
-        <a href="${appleURL}" target="_blank" class="btn nav w-full justify-center">🍎 用 Apple Maps 開啟</a>
-        <a href="${googleURL}" target="_blank" class="btn map w-full justify-center">🗺️ 用 Google Maps 開啟</a>
-        <a href="${searchURL}" target="_blank" class="btn search w-full justify-center">🔍 查看攻略</a>
-      </div>
-
-    </div>
+  const panel = document.createElement("div");
+  panel.className = "menu-panel show";
+  panel.innerHTML = `
+    <div class="menu-item" onclick="editItem('${id}')">編輯</div>
+    <div class="menu-item" onclick="deleteItem('${id}')">刪除</div>
   `;
 
-  // 開啟 modal
-  mapModal.classList.add("show");
-  lockBodyScroll();
+  document.body.appendChild(panel);
+
+  const rect = event.target.getBoundingClientRect();
+  panel.style.left = rect.left - 90 + "px";
+  panel.style.top = rect.bottom + "px";
 }
 
-function closeMapModal(){
-  mapModal.classList.remove("show");
-  mapModalMap.innerHTML = "";
-  unlockBodyScroll();
+function closeAllMenus(){
+  document.querySelectorAll(".menu-panel").forEach(p => p.remove());
 }
 
-/* --------------------------------------------------
-   Trip Modal (TRIP.com iframe + fallback)
--------------------------------------------------- */
-function openTripModal(label, url){
-  // 先關其他 modal，避免互壓
-  closeAllModals();
+document.body.onclick = (e) => {
+  if (!e.target.classList.contains("menu-btn")) closeAllMenus();
+};
 
-  tripModalTitle.textContent = `TRIP.com ${label}`;
-  tripModalBody.innerHTML = `<div class="modal-loading">TRIP.com 資訊載入中…</div>`;
-
-  if (navigator.onLine){
-    const iframe = document.createElement("iframe");
-    iframe.src = url;
-    iframe.className = "w-full h-full border-0";
-    iframe.loading = "lazy";
-    iframe.onerror = ()=>{
-      window.open(url, "_blank");
-      closeTripModal();
-    };
-    tripModalBody.appendChild(iframe);
-
-    // 如果被 X-Frame-Options 擋，就改成新分頁開
-    setTimeout(()=>{
-      try{
-        const doc = iframe.contentDocument;
-        if (!doc || (doc.body && doc.body.innerText &&
-          (doc.body.innerText.includes("refused") || doc.body.innerText.includes("denied")))){
-          window.open(url, "_blank");
-          closeTripModal();
-        }else{
-          const loading = tripModalBody.querySelector(".modal-loading");
-          if (loading) loading.remove();
-        }
-      }catch(e){
-        window.open(url, "_blank");
-        closeTripModal();
-      }
-    }, 900);
-  }else{
-    tripModalBody.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center text-white text-sm font-bold">
-        離線中，無法載入 TRIP.com
-      </div>`;
-  }
-
-  tripModal.classList.add("show");
-  lockBodyScroll();
+/* ---------------------------------------------------------
+   記帳：刪除
+--------------------------------------------------------- */
+async function deleteItem(id){
+  await supabase.from("budgets").delete().eq("id", id);
+  closeAllMenus();
+  loadExpenses();
 }
 
-function closeTripModal(){
-  closeAllModals();
+/* ---------------------------------------------------------
+   記帳：編輯
+--------------------------------------------------------- */
+async function editItem(id){
+  closeAllMenus();
+
+  const newJPY = prompt("新的金額（JPY）");
+  if (!newJPY) return;
+
+  const newNote = prompt("備註（可空白）") || null;
+
+  await supabase.from("budgets")
+    .update({ amount: newJPY, note: newNote })
+    .eq("id", id);
+
+  loadExpenses();
 }
 
-tripModal.addEventListener("click",(e)=>{
-  if (e.target === tripModal) closeTripModal();
+/* ---------------------------------------------------------
+   記帳：新增
+--------------------------------------------------------- */
+document.getElementById("expense-form").onsubmit = async (e)=>{
+  e.preventDefault();
+
+  const amount = Number(document.getElementById("exp-amount").value);
+  const payer  = document.getElementById("exp-payer").value;
+  const note   = document.getElementById("exp-note").value.trim();
+
+  await supabase.from("budgets").insert([{
+    trip_id: "osaka-2024",
+    amount: amount,
+    payer: payer,
+    note: note || null
+  }]);
+
+  document.getElementById("exp-amount").value = "";
+  document.getElementById("exp-note").value = "";
+
+  loadExpenses();
+};
+
+/* ---------------------------------------------------------
+   Tab 切換
+--------------------------------------------------------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tab-content").forEach(t=>{
+      t.classList.remove("active");
+    });
+    document.getElementById(`tab-${tab}`).classList.add("active");
+  };
 });
 
-/* --------------------------------------------------
-   Hotel Modal + room number（localStorage）
--------------------------------------------------- */
-function openHotelModal(){
-  // 先關掉 Map / Trip，確保只剩住宿卡片
-  closeAllModals();
-
-  hotelModal.classList.add("show");
-  lockBodyScroll();
-
-  const input = document.getElementById("roomNumberInput");
-  if (input){
-    input.value = localStorage.getItem(ROOM_KEY) || "";
-    input.oninput = ()=>localStorage.setItem(ROOM_KEY, input.value);
-  }
+/* ---------------------------------------------------------
+   Service Worker（相對路徑 for GitHub Pages）
+--------------------------------------------------------- */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js");
 }
 
-function closeHotelModal(){
-  closeAllModals();
+/* ---------------------------------------------------------
+   初始化（放在最後避免 JS 執行時 DOM 尚未生成）
+--------------------------------------------------------- */
+async function init(){
+  await fetchRate();        // 讀匯率
+  renderDayChips();         // 渲染 Day tab
+  renderDay("day1");        // 初始顯示 Day1
+  await loadExpenses();     // 載入記帳
 }
 
-hotelModal.addEventListener("click",(e)=>{
-  if (e.target === hotelModal) closeHotelModal();
-});
-
-
-/* --------------------------------------------------
-   Bottom sheet：滑一下就關
--------------------------------------------------- */
-function attachSheetSwipe(sheetId, closeFn){
-  const sheet = document.getElementById(sheetId);
-  if(!sheet) return;
-  let startY = null;
-  let lastY = null;
-
-  sheet.addEventListener("touchstart", e=>{
-    if(e.touches.length!==1) return;
-    startY = e.touches[0].clientY;
-    lastY = startY;
-  }, {passive:true});
-
-  sheet.addEventListener("touchmove", e=>{
-    if(startY==null) return;
-    lastY = e.touches[0].clientY;
-  }, {passive:true});
-
-  sheet.addEventListener("touchend", ()=>{
-    if(startY==null || lastY==null) { startY=null; lastY=null; return; }
-    const delta = lastY - startY;
-    if(delta > 60){
-      closeFn();
-    }
-    startY = null;
-    lastY = null;
-  }, {passive:true});
-}
-
-/* --------------------------------------------------
-   Helpers
--------------------------------------------------- */
-function escapeHtml(str){
-  return (str||"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]));
-}
-function escapeAttr(str){
-  return escapeHtml(str).replace(/"/g,"&quot;");
-}
-function escapeJs(str){
-  return (str||"").replace(/'/g,"\\'");
-}
-
-/* --------------------------------------------------
-   倒數計時顯示
--------------------------------------------------- */
-function renderCountdown(){
-  const el = document.getElementById("tripCountdown");
-  if(!el) return;
-  const now = new Date();
-
-  if(now < TRIP_START){
-    const diffMs = TRIP_START - now;
-    const days = Math.ceil(diffMs / (1000*60*60*24));
-    el.textContent = `⏳ 距離出發還有 ${days} 天`;
-  }else if(now > TRIP_END){
-    el.textContent = `✅ 行程已結束，歡迎回味大阪。`;
-  }else{
-    el.textContent = `🎌 正在旅程中，好好玩！`;
-  }
-}
-
-/* --------------------------------------------------
-   boot
--------------------------------------------------- */
-renderItinerary();
-renderTools();
-loadAllWeather();
-showTab('itin');
-renderCountdown();
-setInterval(renderCountdown, 60*1000); // 每分鐘更新倒數
-
-// modal swipe
-attachSheetSwipe("mapSheet", closeMapModal);
-attachSheetSwipe("tripSheet", closeTripModal);
-attachSheetSwipe("hotelSheet", closeHotelModal);
+window.onload = init;
 </script>
+
 </body>
 </html>
-
-
-
-
-
