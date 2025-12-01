@@ -1038,9 +1038,45 @@
             <div class="info-title">🏨 住宿資訊</div>
             <span class="info-tag">Dormy Inn Premium Nanba ANNEX</span>
           </div>
+        
+          <!-- 地址文字 -->
           <div class="info-line">
-            地址查詢建議直接用 Google Maps 搜尋「Dormy Inn Premium Nanba Annex」。
+            地址：大阪市中央区日本橋1丁目4-18（Dormy Inn Premium Nanba Annex）
           </div>
+        
+          <!-- 地圖按鈕 -->
+          <button
+            onclick="window.open('https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Premium+Nanba+Annex', '_blank')"
+            style="
+              margin-top:8px;
+              border-radius:999px;
+              border:none;
+              background:#0ea5e9;
+              color:white;
+              padding:8px 14px;
+              font-size:13px;
+              font-weight:600;
+              cursor:pointer;
+            ">
+            查看 Google Maps 地圖
+          </button>
+        
+          <!-- 房號 -->
+          <div class="info-line" style="margin-top:12px;">
+            <strong>房號：</strong>
+            <span id="roomNumberDisplay">尚未設定</span>
+          </div>
+        
+          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <input id="roomNumberInput" type="number" placeholder="例如 608"
+              style="padding:8px 10px;border-radius:999px;border:1px solid #cbd5e1;font-size:13px;width:120px;">
+            <button onclick="saveRoomNumber()"
+              style="border-radius:999px;border:none;background:#0ea5e9;color:white;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">
+              儲存房號
+            </button>
+          </div>
+        </div>
+
           <div class="info-line" style="margin-top:8px;">
             <strong>房號：</strong>
             <span id="roomNumberDisplay">尚未設定</span>
@@ -1758,3 +1794,4 @@
 </script>
 </body>
 </html>
+
