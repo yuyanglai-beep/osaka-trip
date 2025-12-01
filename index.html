@@ -1,231 +1,465 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Osaka 行程 & 記帳 App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PWA Manifest（相對路徑 for GitHub Pages） -->
-  <link rel="manifest" href="./manifest.json" />
+  <title>大阪行程 App</title>
 
   <style>
-    :root {
-      --blue-main: #3b82f6;
-      --blue-soft: #dbeafe;
-      --blue-border: #93c5fd;
-      --bg: #f7f3ee;
-      --text-main: #333;
-      --card-bg: #fff;
-      --radius: 12px;
-      --shadow: 0 6px 18px rgba(0,0,0,0.06);
-    }
-
     body {
       margin: 0;
-      background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
-      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
     }
 
-    .app {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 12px 16px 80px;
+    header {
+      padding: 14px 20px;
+      background: #005BBB;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
 
-    header { text-align: center; padding: 8px 0 12px; }
-    header h1 { margin: 0; font-size: 20px; }
-
-    /* Tab Buttons */
-    .tab-bar {
-      display: flex; gap: 6px; margin: 12px 0;
+    .tabs {
+      display: flex;
+      background: white;
+      overflow-x: auto;
+      border-bottom: 1px solid #ddd;
     }
     .tab-btn {
-      flex: 1; padding: 8px 0; border-radius: 999px;
-      border: none; cursor: pointer; font-weight: 600;
-      background: var(--blue-soft); color: var(--blue-main);
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
     }
-    .tab-btn.active { background: var(--blue-main); color:#fff; }
-
-    /* Tabs Content */
-    .tab-content { display:none; }
-    .tab-content.active { display:block; }
-
-    /* Days Selector */
-    .day-switcher {
-      display:flex; gap:8px;
-      overflow-x:auto; padding-bottom:4px;
-    }
-    .day-chip {
-      padding: 6px 10px; white-space: nowrap;
-      border-radius: 999px; border: 1px solid var(--blue-border);
-      background:#fff; cursor:pointer; font-size:13px;
-    }
-    .day-chip.active { background: var(--blue-main); color:#fff; }
-
-    /* Highlight / Important Notice */
-    .highlight-card {
-      background: var(--blue-soft); padding: 10px;
-      border-radius: var(--radius); box-shadow: var(--shadow);
-      margin: 12px 0; font-size: 13px;
+    .tab-btn.active {
+      color: #005BBB;
+      border-bottom: 3px solid #005BBB;
     }
 
-    /* Event Cards */
-    .event-card {
-      background:#fff; padding:10px;
-      margin-bottom:8px; border-left:3px solid var(--blue-main);
-      border-radius: var(--radius); cursor:pointer;
+    .tab-content {
+      display: none;
+      padding: 15px;
     }
-    .event-time { font-size:12px; color:#555; }
-    .event-title { font-size:15px; font-weight:bold; }
-    .event-place { font-size:13px; color:#666; }
+    .tab-content.active {
+      display: block;
+    }
+
+    .day-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #003E7E;
+    }
+
+    .alert-box {
+      padding: 12px;
+      border-radius: 10px;
+      background: #FFE082;
+      margin-bottom: 18px;
+      font-size: 15px;
+      line-height: 1.4;
+      border-left: 6px solid #FFB300;
+    }
+
+    .timeline {
+      margin-top: 8px;
+      border-left: 3px solid #005BBB;
+      padding-left: 15px;
+    }
+    .event {
+      margin-bottom: 20px;
+      cursor: pointer;
+      padding-left: 6px;
+    }
+    .event-time {
+      font-weight: bold;
+      color: #005BBB;
+      margin-bottom: 3px;
+    }
+    .event-title {
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+    .event-desc {
+      font-size: 14px;
+      color: #666;
+    }
 
     /* Modal */
     .modal-backdrop {
-      position: fixed; inset:0; background: rgba(0,0,0,0.4);
-      display:none; align-items:center; justify-content:center;
-      z-index:50; padding:16px;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
     }
-    .modal-backdrop.show { display:flex; }
+    .modal-backdrop.show {
+      display: flex;
+    }
+    .modal-box {
+      width: 90%;
+      max-width: 480px;
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      animation: fadeInUp .25s ease;
+    }
+    @keyframes fadeInUp {
+      from { transform: translateY(20px); opacity: 0;}
+      to { transform: translateY(0); opacity: 1;}
+    }
 
-    .modal {
-      background:#fff; width:100%; max-width:480px;
-      border-radius: var(--radius); overflow-y:auto;
-      max-height:90vh; box-shadow:0 10px 32px rgba(0,0,0,0.25);
-    }
-    .modal img {
-      width: 100%; height: 200px; object-fit: cover;
-      background:#ddd;
-    }
-    .modal-body { padding:12px; }
-    .btn-blue {
-      background: var(--blue-main); color:#fff;
-      border-radius: var(--radius); padding:6px 12px;
-      border:none; cursor:pointer;
+    .modal-img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      background: #ddd;
     }
 
-    /* Info Cards */
-    .info-card {
-      background:#fff; padding:12px;
-      border-radius: var(--radius); box-shadow: var(--shadow);
-      margin-bottom:14px; font-size:13px;
+    .modal-body {
+      padding: 15px;
     }
-    .info-row { margin-bottom:6px; }
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .modal-sub {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .modal-desc {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
 
-    /* Expense */
+    .modal-nav-btn {
+      width: 100%;
+      padding: 12px;
+      background: #005BBB;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* 記帳 */
+    .expense-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .expense-form input,
+    .expense-form select {
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      flex: 1;
+    }
+    .expense-form button {
+      background: #005BBB;
+      color: white;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
     .expense-item {
-      display:flex; justify-content:space-between;
-      padding:6px 0; border-bottom:1px solid #eee;
-      align-items:center;
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .expense-note { font-size:12px; color:#666; }
-
-    /* 3 dots menu */
+    .expense-note {
+      font-size: 14px;
+      color: #666;
+      margin-top: 3px;
+    }
     .menu-btn {
-      cursor:pointer; font-size:18px;
-      padding:0 6px; color:#555;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
     }
     .menu-panel {
-      position:absolute;
-      background:#fff; border:1px solid #ddd;
-      border-radius:8px; padding:6px 0;
-      width:120px; box-shadow:0 4px 18px rgba(0,0,0,0.12);
-      display:none; z-index:80;
+      position: absolute;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 6px 0;
+      display: none;
+      z-index: 200;
     }
-    .menu-panel.show { display:block; }
+    .menu-panel.show {
+      display: block;
+    }
     .menu-item {
-      padding:6px 12px; cursor:pointer;
+      padding: 10px 16px;
+      font-size: 15px;
+      cursor: pointer;
     }
-    .menu-item:hover { background:#f3f4f6; }
+    .menu-item:hover {
+      background: #f5f5f5;
+    }
+
   </style>
 </head>
+
 <body>
-<div class="app">
-  <header>
-    <h1>大阪行程 & 記帳</h1>
-  </header>
 
-  <!-- Tab Buttons -->
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="itinerary">行程</button>
-    <button class="tab-btn" data-tab="info">資訊 ＆ 記帳</button>
+<header>大阪行程 App</header>
+
+<div class="tabs">
+  <div class="tab-btn active" data-tab="day1">Day 1</div>
+  <div class="tab-btn" data-tab="day2">Day 2</div>
+  <div class="tab-btn" data-tab="day3">Day 3</div>
+  <div class="tab-btn" data-tab="day4">Day 4</div>
+  <div class="tab-btn" data-tab="info">資訊</div>
+  <div class="tab-btn" data-tab="money">記帳</div>
+</div>
+
+<!-- Tab contents -->
+<div id="tab-day1" class="tab-content active">
+  <div class="day-title">12/5（五） Day1</div>
+
+  <div class="alert-box">
+    ✈️ 抵達後：先搭南海特急 → 寄行李 → 大阪城 → 心齋橋
   </div>
 
-  <!-- 行程 TAB -->
-  <div class="tab-content active" id="tab-itinerary">
-    <div class="day-switcher" id="day-switcher"></div>
-    <div id="day-content"></div>
+  <div class="timeline">
+    <div class="event" onclick="openModal(day1[0], '12/5')">
+      <div class="event-time">02:30 → 06:00</div>
+      <div class="event-title">GK050 桃園 T1 → 關西 T1</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[1], '12/5')">
+      <div class="event-time">07:30 → 09:00</div>
+      <div class="event-title">南海特急 → 難波</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[2], '12/5')">
+      <div class="event-time">09:30 → 10:00</div>
+      <div class="event-title">寄行李</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[3], '12/5')">
+      <div class="event-time">10:30 → 12:30</div>
+      <div class="event-title">大阪城散策</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[4], '12/5')">
+      <div class="event-time">13:30 → 14:30</div>
+      <div class="event-title">午餐：吉次牛舌 鰻谷店</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[5], '12/5')">
+      <div class="event-time">15:30 → 16:30</div>
+      <div class="event-title">Check-in & 下午茶</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[6], '12/5')">
+      <div class="event-time">17:30 → 19:00</div>
+      <div class="event-title">晚餐：板前燒肉一斗／大起水產</div>
+    </div>
+
+    <div class="event" onclick="openModal(day1[7], '12/5')">
+      <div class="event-time">19:00 → 21:30</div>
+      <div class="event-title">道頓堀 & 心齋橋逛街</div>
+    </div>
+  </div>
+</div>
+<!-- Day2 -->
+<div id="tab-day2" class="tab-content">
+  <div class="day-title">12/6（六） Day2</div>
+
+  <div class="alert-box">
+    🎤 Today：黑門市場 → 通天閣 → Seventeen 大阪京瓷巨蛋
   </div>
 
-  <!-- 資訊 TAB -->
-  <div class="tab-content" id="tab-info">
-
-    <!-- 航班資訊 -->
-    <div class="info-card">
-      <strong>✈ 航班資訊</strong>
-      <div class="info-row">
-        去程 GK050
-        <button class="btn-blue"
-          onclick="window.open('https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=GK050&dcode=TPE&acode=KIX&queryDate=2025-12-05&queryTime=02:30:00&locale=zh-TW')">
-          查看
-        </button>
-      </div>
-      <div class="info-row">
-        回程 BR131
-        <button class="btn-blue"
-          onclick="window.open('https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=BR131&dcode=KIX&acode=TPE&queryDate=2025-12-08&queryTime=12:55:00&locale=zh-TW')">
-          查看
-        </button>
-      </div>
+  <div class="timeline">
+    <div class="event" onclick="openModal(day2[0], '12/6')">
+      <div class="event-time">09:00 → 10:30</div>
+      <div class="event-title">黑門市場</div>
     </div>
 
-    <!-- 住宿 -->
-    <div class="info-card">
-      <strong>🏠 住宿</strong><br>
-      Dormy Inn PREMIUM Nanba ANNEX
-      <div class="info-row">
-        房號：<input id="room-number" style="padding:4px 6px; width:80px;">
-      </div>
-      <button class="btn-blue"
-        onclick="window.open('https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Premium+Namba+Annex')">
-        地圖
-      </button>
+    <div class="event" onclick="openModal(day2[1], '12/6')">
+      <div class="event-time">11:00 → 12:30</div>
+      <div class="event-title">難波商圈 & 難波八阪神社</div>
     </div>
 
-    <!-- 記帳區（第 3 部分會補上 JS） -->
-    <div class="info-card" id="expense-section">
-      <strong>💴 新增支出（JPY）</strong>
-      <div id="rate-info" style="font-size:12px;color:#555;margin:4px 0;">匯率讀取中...</div>
-
-      <form id="expense-form">
-        <input type="number" id="exp-amount" placeholder="金額（JPY）" required />
-        <select id="exp-payer">
-          <option value="羊">羊</option>
-          <option value="熙">熙</option>
-        </select>
-        <input type="text" id="exp-note" placeholder="備註（餐費 / 交通）"/>
-        <button class="btn-blue" style="width:100%;margin-top:6px;">新增</button>
-      </form>
-
-      <div id="expense-list" style="margin-top:10px;"></div>
-      <div id="expense-total" style="margin-top:6px; font-weight:bold;"></div>
-      <div id="settlement" style="margin-top:10px; background:#e0edff; padding:8px; border-radius:8px;"></div>
+    <div class="event" onclick="openModal(day2[2], '12/6')">
+      <div class="event-time">13:30 → 15:30</div>
+      <div class="event-title">午餐 & 通天閣 新世界</div>
     </div>
 
+    <div class="event" onclick="openModal(day2[3], '12/6')">
+      <div class="event-time">16:00 → 21:00</div>
+      <div class="event-title">Seventeen in 大阪京瓷巨蛋</div>
+    </div>
+
+    <div class="event" onclick="openModal(day2[4], '12/6')">
+      <div class="event-time">21:30 → 23:00</div>
+      <div class="event-title">演唱會後晚餐</div>
+    </div>
   </div>
 </div>
 
-<!-- Modal -->
-<div class="modal-backdrop" id="modal-backdrop">
-  <div class="modal">
-    <img id="modal-img" src="" alt="景點圖片">
-    <div class="modal-body">
-      <div id="modal-title" style="font-size:16px;font-weight:700;"></div>
-      <div id="modal-sub" style="font-size:12px;color:#555;margin-top:3px;"></div>
-      <div id="modal-desc" style="margin:8px 0;"></div>
+<!-- Day3 -->
+<div id="tab-day3" class="tab-content">
+  <div class="day-title">12/7（日） Day3</div>
 
-      <button class="btn-blue" id="modal-nav">地圖</button>
-      <button class="btn-blue" id="modal-close" style="background:#777;margin-left:6px;">關閉</button>
+  <div class="alert-box">
+    ⛩️ 勝尾寺半日遊 → 梅田甜點逛街日
+  </div>
+
+  <div class="timeline">
+    <div class="event" onclick="openModal(day3[0], '12/7')">
+      <div class="event-time">08:00 → 09:00</div>
+      <div class="event-title">早午餐</div>
+    </div>
+
+    <div class="event" onclick="openModal(day3[1], '12/7')">
+      <div class="event-time">11:00 → 14:30</div>
+      <div class="event-title">勝尾寺半日遊</div>
+    </div>
+
+    <div class="event" onclick="openModal(day3[2], '12/7')">
+      <div class="event-time">15:00 → 16:30</div>
+      <div class="event-title">梅田 午餐</div>
+    </div>
+
+    <div class="event" onclick="openModal(day3[3], '12/7')">
+      <div class="event-time">17:00 → 19:00</div>
+      <div class="event-title">梅田 甜點 & 逛街</div>
+    </div>
+
+    <div class="event" onclick="openModal(day3[4], '12/7')">
+      <div class="event-time">19:00 → 21:00</div>
+      <div class="event-title">梅田 晚餐</div>
+    </div>
+  </div>
+</div>
+
+<!-- Day4 -->
+<div id="tab-day4" class="tab-content">
+  <div class="day-title">12/8（一） Day4</div>
+
+  <div class="alert-box">
+    ✈️ 回程日：退房 → 南海特急 → KIX → BR131
+  </div>
+
+  <div class="timeline">
+    <div class="event" onclick="openModal(day4[0], '12/8')">
+      <div class="event-time">08:00</div>
+      <div class="event-title">退房</div>
+    </div>
+
+    <div class="event" onclick="openModal(day4[1], '12/8')">
+      <div class="event-time">09:00 → 10:00</div>
+      <div class="event-title">南海特急 → 關西空港</div>
+    </div>
+
+    <div class="event" onclick="openModal(day4[2], '12/8')">
+      <div class="event-time">12:55 → 15:05</div>
+      <div class="event-title">BR131 關西 → 桃園</div>
+    </div>
+  </div>
+</div>
+
+<!-- 資訊 -->
+<div id="tab-info" class="tab-content">
+  <div class="day-title">旅程資訊</div>
+
+  <div class="alert-box">
+    📌 重要提醒：  
+    飯店在：Dormy Inn Premium Nanba ANNEX  
+    房號：<span id="roomNumberDisplay">尚未設定</span>
+  </div>
+
+  <p><strong>🏨 飯店：</strong>Dormy Inn Premium Nanba ANNEX</p>
+
+  <div style="margin-top:10px;">
+    <label>房號：</label>
+    <input id="roomNumberInput" type="number" placeholder="例如：608" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:140px;">
+    <button onclick="saveRoomNumber()" style="padding:8px 14px;background:#005BBB;color:white;border:none;border-radius:6px;cursor:pointer;">儲存</button>
+  </div>
+
+  <hr style="margin:20px 0;">
+
+  <p><strong>✈️ 航班資訊</strong></p>
+  <p>去程：GK050 桃園 → 大阪（點擊可查看）</p>
+  <a href="https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=GK050&dcode=TPE&acode=KIX&queryDate=2025-12-05&queryTime=02:30:00&locale=zh-TW" target="_blank">
+    <button style="padding:10px 14px;background:#005BBB;color:white;border:none;border-radius:6px;">查看 GK050</button>
+  </a>
+
+  <p style="margin-top:14px;">回程：BR131 大阪 → 桃園（點擊可查看）</p>
+  <a href="https://www.trip.com/webapp/flight/schedule/detail.html?isHideNavBar=YES&origin=210&useCTHybrid=1&flightNo=BR131&dcode=KIX&acode=TPE&queryDate=2025-12-08&queryTime=12:55:00&locale=zh-TW" target="_blank">
+    <button style="padding:10px 14px;background:#005BBB;color:white;border:none;border-radius:6px;">查看 BR131</button>
+  </a>
+</div>
+
+<!-- 記帳 -->
+<div id="tab-money" class="tab-content">
+  <div class="day-title">記帳小工具</div>
+
+  <div class="alert-box">
+    💴 記帳會自動換算台幣（台灣銀行 JPY → TWD 匯率）
+  </div>
+
+  <form id="expense-form" class="expense-form">
+    <input type="number" id="exp-amount" placeholder="金額（日幣）" inputmode="numeric" required>
+    <select id="exp-payer">
+      <option value="羊">羊</option>
+      <option value="熙">熙</option>
+    </select>
+    <input type="text" id="exp-note" placeholder="備註（可空白）">
+    <button type="submit">新增</button>
+  </form>
+
+  <div id="expense-list"></div>
+
+  <div style="margin-top:20px;font-size:17px;">
+    <strong id="expense-total"></strong>
+  </div>
+
+  <div style="margin-top:8px;font-size:17px;color:#005BBB;">
+    <strong>結算結果：</strong>
+    <span id="settlement"></span>
+  </div>
+</div>
+<!-- Modal -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="backdropClick(event)">
+  <div class="modal-box">
+    <img class="modal-img" id="modal-img" alt="景點圖片">
+    <div class="modal-body">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-sub" id="modal-sub"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-nav-btn" id="modal-nav-btn">地圖</div>
+      <div style="margin-top:10px;text-align:center;">
+        <button onclick="closeModal()" style="padding:8px 16px;border:none;border-radius:6px;background:#ccc;cursor:pointer;">
+          關閉
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -234,387 +468,515 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ---------------------------------------------------------
-   Wikipedia 圖片 API（免 key）
---------------------------------------------------------- */
-async function fetchWikipediaImage(keyword) {
-  try {
-    // Step 1: 找頁面
-    const searchUrl = `https://zh.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(keyword)}&format=json&origin=*`;
-    const searchRes = await fetch(searchUrl).then(r => r.json());
-    if (!searchRes.query.search.length) return null;
+  /* -----------------------------
+     行程資料（Day1 ~ Day4）
+  ----------------------------- */
+  const day1 = [
+    {
+      title: "GK050 桃園 T1 → 關西 T1",
+      placeName: "Kansai International Airport",
+      desc: "紅眼班機，抵達關西機場 T1。記得先補充水分、上洗手間。",
+      mapsQuery: "Kansai International Airport"
+    },
+    {
+      title: "南海特急 → 難波",
+      placeName: "南海電鐵 難波站",
+      desc: "從關西機場搭南海特急或拉皮特，直達難波站。",
+      mapsQuery: "Nankai Namba Station"
+    },
+    {
+      title: "寄行李",
+      placeName: "Dormy Inn Premium Nanba Annex",
+      desc: "先到飯店寄放行李，解放雙手再開始玩。",
+      mapsQuery: "Dormy Inn Premium Nanba Annex"
+    },
+    {
+      title: "大阪城散策",
+      placeName: "Osaka Castle",
+      desc: "大阪代表景點，適合拍照、散步、看天守閣。",
+      mapsQuery: "Osaka Castle"
+    },
+    {
+      title: "午餐：吉次牛舌 鰻谷店",
+      placeName: "吉次牛舌 鰻谷店",
+      desc: "主打厚切牛舌，搭配山藥泥、麥飯。",
+      mapsQuery: "吉次牛舌 鰻谷店"
+    },
+    {
+      title: "Check-in & 下午茶",
+      placeName: "心齋橋周邊咖啡店",
+      desc: "Check-in 後在心齋橋附近找可麗餅、藍瓶咖啡或 MooKEN 泡芙當下午茶。",
+      mapsQuery: "Shinsaibashi Osaka cafes"
+    },
+    {
+      title: "晚餐：板前燒肉一斗／大起水產",
+      placeName: "板前焼肉 一斗 東心齋橋店 或 大起水產 道頓堀店",
+      desc: "燒肉或迴轉壽司二選一，視當天心情決定。",
+      mapsQuery: "板前焼肉 一斗 東心斎橋店"
+    },
+    {
+      title: "道頓堀 & 心齋橋逛街",
+      placeName: "道頓堀・心齋橋商店街",
+      desc: "逛藥妝、扭蛋、章魚燒、跑跑人招牌、美國村一帶。",
+      mapsQuery: "Dotonbori Shinsaibashi"
+    }
+  ];
 
-    const pageId = searchRes.query.search[0].pageid;
+  const day2 = [
+    {
+      title: "黑門市場",
+      placeName: "黒門市場",
+      desc: "吃鮪魚、蟹腳、小吃、關東煮等海鮮與熟食。",
+      mapsQuery: "Kuromon Ichiba Market"
+    },
+    {
+      title: "難波商圈 & 難波八阪神社",
+      placeName: "難波八阪神社",
+      desc: "逛難波CITY、百貨，再去看超巨大的獅子頭神社。",
+      mapsQuery: "Namba Yasaka Shrine"
+    },
+    {
+      title: "午餐 & 通天閣 新世界",
+      placeName: "新世界本通商店街",
+      desc: "逛通天閣周邊、吃達摩串炸或 Usagiya 甜點。",
+      mapsQuery: "Shinsekai Tsutenkaku"
+    },
+    {
+      title: "Seventeen in 大阪京瓷巨蛋",
+      placeName: "京瓷巨蛋大阪",
+      desc: "16:00 開始入場，記得帶票、毛巾、應援物。",
+      mapsQuery: "Kyocera Dome Osaka"
+    },
+    {
+      title: "演唱會後晚餐",
+      placeName: "難波一帶",
+      desc: "回到難波後吃一蘭拉麵、串燒或簡單宵夜。",
+      mapsQuery: "Ichiran Namba"
+    }
+  ];
 
-    // Step 2: 取主圖
-    const pageUrl = `https://zh.wikipedia.org/w/api.php?action=query&pageids=${pageId}&prop=pageimages&pithumbsize=800&format=json&origin=*`;
-    const pageRes = await fetch(pageUrl).then(r => r.json());
+  const day3 = [
+    {
+      title: "早午餐",
+      placeName: "心齋橋或附近咖啡廳",
+      desc: "可以選客美多、HARBS 或飯店附近早餐店。",
+      mapsQuery: "Komeda Shinsaibashi"
+    },
+    {
+      title: "勝尾寺半日遊",
+      placeName: "勝尾寺",
+      desc: "搭御堂筋線到箕面萱野，轉巴士前往。買達摩籤、蓋章、拍照。",
+      mapsQuery: "Katsuo-ji Temple"
+    },
+    {
+      title: "梅田 午餐",
+      placeName: "梅田車站周邊",
+      desc: "可以吃 new babe 炸豬排或車站周邊餐廳。",
+      mapsQuery: "Umeda Osaka"
+    },
+    {
+      title: "梅田 甜點 & 逛街",
+      placeName: "LUCUA / HEP FIVE / 大丸梅田",
+      desc: "逛百貨、買吉伊卡哇周邊、吃 HARBS 或千層酥。",
+      mapsQuery: "LUCUA Osaka"
+    },
+    {
+      title: "梅田 晚餐",
+      placeName: "梅田一帶",
+      desc: "可考慮炸牛元村或其他居酒屋、燒肉店。",
+      mapsQuery: "Umeda dinner Osaka"
+    }
+  ];
 
-    const pages = pageRes.query.pages;
-    const page = pages[pageId];
-    return page.thumbnail?.source || null;
+  const day4 = [
+    {
+      title: "退房",
+      placeName: "Dormy Inn Premium Nanba ANNEX",
+      desc: "最晚 08:00 退房，確認行李與重要物品。",
+      mapsQuery: "Dormy Inn Premium Nanba Annex"
+    },
+    {
+      title: "南海特急 → 關西空港",
+      placeName: "南海電鐵",
+      desc: "從難波搭南海特急前往關西機場，預留足夠時間。",
+      mapsQuery: "Nankai Namba Station"
+    },
+    {
+      title: "BR131 關西 → 桃園",
+      placeName: "關西國際機場 T1",
+      desc: "搭乘 BR131 回桃園，結束四天三夜旅程。",
+      mapsQuery: "Kansai International Airport"
+    }
+  ];
 
-  } catch (err) {
-    console.warn("Wiki Image error:", err);
-    return null;
-  }
-}
+  /* -----------------------------
+     本地圖片 imageMap（21 張）
+     檔案請放在 ./images/ 底下
+  ----------------------------- */
+  const imageMap = {
+    // Day1
+    "GK050 桃園 T1 → 關西 T1": "kansai_airport.jpg",
+    "南海特急 → 難波": "nankai_namba_station.jpg",
+    "寄行李": "hotel_lobby.jpg",
+    "大阪城散策": "osaka_castle.jpg",
+    "午餐：吉次牛舌 鰻谷店": "kittsugi_beef_tongue.jpg",
+    "Check-in & 下午茶": "brunch_generic.jpg",
+    "晚餐：板前燒肉一斗／大起水產": "ittou_yakiniku.jpg",
+    "道頓堀 & 心齋橋逛街": "shinsaibashi_area.jpg",
 
-/* ---------------------------------------------------------
-   台銀匯率抓取
---------------------------------------------------------- */
-let rateJPYtoTWD = 0;
+    // Day2
+    "黑門市場": "kuromon_market.jpg",
+    "難波商圈 & 難波八阪神社": "namba_yasaka.jpg",
+    "午餐 & 通天閣 新世界": "shinsekai_kushikatsu.jpg",
+    "Seventeen in 大阪京瓷巨蛋": "kyocera_dome.jpg",
+    "演唱會後晚餐": "after_concert_dinner.jpg",
 
-async function fetchRate() {
-  try {
-    const res = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW");
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
+    // Day3
+    "早午餐": "harbs_umeda.jpg",
+    "勝尾寺半日遊": "katsuoji_temple.jpg",
+    "梅田 午餐": "umeda_hep_five.jpg",
+    "梅田 甜點 & 逛街": "umeda_lucua.jpg",
+    "梅田 晚餐": "umeda_dinner.jpg",
 
-    const rows = doc.querySelectorAll("tbody tr");
-    for (let r of rows) {
-      if (r.innerText.includes("JPY")) {
-        const tds = r.querySelectorAll("td");
-        rateJPYtoTWD = Number(tds[5].innerText);
-      }
+    // Day4
+    "退房": "hotel_checkout.jpg",
+    "南海特急 → 關西空港": "S__21037109_0.jpg",
+    "BR131 關西 → 桃園": "daiki_sushi.jpg"
+  };
+
+  /* -----------------------------
+     Modal 打開 / 關閉
+  ----------------------------- */
+  const modalBackdrop = document.getElementById("modal-backdrop");
+  const modalImg       = document.getElementById("modal-img");
+  const modalTitle     = document.getElementById("modal-title");
+  const modalSub       = document.getElementById("modal-sub");
+  const modalDesc      = document.getElementById("modal-desc");
+  const modalNavBtn    = document.getElementById("modal-nav-btn");
+
+  function openModal(ev, dateStr) {
+    modalTitle.textContent = ev.title;
+    modalSub.textContent   = `${dateStr} · ${ev.placeName}`;
+    modalDesc.textContent  = ev.desc;
+
+    // 優先使用本地圖片
+    const fileName = imageMap[ev.title];
+    if (fileName) {
+      modalImg.src = `./images/${fileName}`;
+    } else {
+      // 沒有對應圖片就給一個灰底文字圖
+      modalImg.src = "https://dummyimage.com/800x600/cccccc/000000&text=" + encodeURIComponent(ev.placeName);
     }
 
-    document.getElementById("rate-info").textContent =
-      `目前匯率：約 1 JPY = ${rateJPYtoTWD} TWD`;
-
-  } catch {
-    rateJPYtoTWD = 0.2;
-    document.getElementById("rate-info").textContent =
-      "匯率讀取失敗，暫用 0.2 計算";
-  }
-}
-
-/* ---------------------------------------------------------
-   行程資料（你之後可以擴充 Day3 / Day4）
---------------------------------------------------------- */
-const itinerary = [
-  {
-    dayId: "day1",
-    date: "12/5（五）",
-    highlight: "大丸百貨 20:00 關門，要逛先逛百貨！",
-    events: [
-      {
-        time: "02:30–06:00",
-        title: "GK050 桃園 → 關西",
-        placeName: "Kansai Airport",
-        description: "紅眼班機，抵達後搭南海特急至難波。",
-        mapsQuery: "Kansai Airport"
-      },
-      {
-        time: "07:30–09:00",
-        title: "南海特急 → 難波",
-        placeName: "Nankai Namba Station",
-        description: "班次多、現場買也可以。",
-        mapsQuery: "Nankai Namba Station"
-      },
-      {
-        time: "10:30–12:30",
-        title: "大阪城散策",
-        placeName: "Osaka Castle",
-        description: "散步拍照。",
-        mapsQuery: "Osaka Castle"
-      }
-    ]
-  },
-
-  {
-    dayId: "day2",
-    date: "12/6（六）",
-    highlight: "16:00 Seventeen 京瓷巨蛋入場！",
-    events: [
-      {
-        time: "09:00–10:30",
-        title: "黑門市場",
-        placeName: "Kuromon Ichiba Market",
-        description: "吃海鮮、鮪魚、串物。",
-        mapsQuery: "Kuromon Ichiba Market"
-      },
-      {
-        time: "13:30–15:30",
-        title: "新世界通天閣",
-        placeName: "Tsutenkaku Tower",
-        description: "串炸、Usagiya。",
-        mapsQuery: "Tsutenkaku Tower"
-      },
-      {
-        time: "16:00–21:00",
-        title: "Seventeen 京瓷巨蛋",
-        placeName: "Kyocera Dome Osaka",
-        description: "入場 16:00，21:00 結束。",
-        mapsQuery: "Kyocera Dome Osaka"
-      }
-    ]
-  }
-];
-
-/* ---------------------------------------------------------
-   渲染行程頁籤
---------------------------------------------------------- */
-function renderDayChips() {
-  const wrap = document.getElementById("day-switcher");
-  wrap.innerHTML = "";
-
-  itinerary.forEach((d, i) => {
-    const chip = document.createElement("button");
-    chip.className = "day-chip";
-    chip.textContent = d.date;
-    if (i === 0) chip.classList.add("active");
-
-    chip.onclick = () => {
-      document.querySelectorAll(".day-chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      renderDay(d.dayId);
+    modalNavBtn.onclick = () => {
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.mapsQuery)}`,
+        "_blank"
+      );
     };
 
-    wrap.appendChild(chip);
-  });
-}
+    modalBackdrop.classList.add("show");
+  }
 
-function renderDay(dayId) {
-  const day = itinerary.find(d => d.dayId === dayId);
-  const box = document.getElementById("day-content");
-  box.innerHTML = "";
+  function closeModal() {
+    modalBackdrop.classList.remove("show");
+  }
 
-  const h = document.createElement("div");
-  h.className = "highlight-card";
-  h.textContent = day.highlight;
-  box.appendChild(h);
+  function backdropClick(e) {
+    if (e.target === modalBackdrop) {
+      closeModal();
+    }
+  }
 
-  day.events.forEach(ev => {
-    const card = document.createElement("div");
-    card.className = "event-card";
-    card.innerHTML = `
-      <div class="event-time">${ev.time}</div>
-      <div class="event-title">${ev.title}</div>
-      <div class="event-place">${ev.placeName}</div>
-    `;
-    card.onclick = () => openModal(ev, day.date);
-    box.appendChild(card);
-  });
-}
+  /* -----------------------------
+     房號儲存（localStorage）
+  ----------------------------- */
+  function saveRoomNumber() {
+    const input = document.getElementById("roomNumberInput");
+    const display = document.getElementById("roomNumberDisplay");
+    const value = input.value.trim();
 
-/* ---------------------------------------------------------
-   Modal（含 Wikipedia 圖片）
---------------------------------------------------------- */
-const modalBackdrop = document.getElementById("modal-backdrop");
-const modalImg = document.getElementById("modal-img");
-const modalTitle = document.getElementById("modal-title");
-const modalSub = document.getElementById("modal-sub");
-const modalDesc = document.getElementById("modal-desc");
-const modalNav = document.getElementById("modal-nav");
-const modalClose = document.getElementById("modal-close");
+    if (!value) {
+      alert("請輸入房號");
+      return;
+    }
+    localStorage.setItem("osaka_room_number", value);
+    display.textContent = value;
+  }
 
-async function openModal(ev, date) {
-  modalTitle.textContent = ev.title;
-  modalSub.textContent = `${date} · ${ev.placeName}`;
-  modalDesc.textContent = ev.description;
+  function loadRoomNumber() {
+    const display = document.getElementById("roomNumberDisplay");
+    const input   = document.getElementById("roomNumberInput");
+    const saved   = localStorage.getItem("osaka_room_number");
+    if (saved) {
+      display.textContent = saved;
+      input.value = saved;
+    }
+  }
 
-  const img = await fetchWikipediaImage(ev.placeName);
-  modalImg.src = img || "https://dummyimage.com/800x600/cccccc/000000&text=" + 
-                  encodeURIComponent(ev.placeName);
+  /* -----------------------------
+     Tab 切換
+  ----------------------------- */
+  const tabButtons  = document.querySelectorAll(".tab-btn");
+  const tabContents = document.querySelectorAll(".tab-content");
 
-  modalNav.onclick = () => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.mapsQuery)}`);
-  };
-
-  modalBackdrop.classList.add("show");
-}
-
-modalClose.onclick = () => modalBackdrop.classList.remove("show");
-modalBackdrop.onclick = e => {
-  if (e.target === modalBackdrop) modalBackdrop.classList.remove("show");
-};
-
-/* ---------------------------------------------------------
-   房號儲存
---------------------------------------------------------- */
-const roomInput = document.getElementById("room-number");
-roomInput.value = localStorage.getItem("osaka_room") || "";
-roomInput.oninput = () => {
-  localStorage.setItem("osaka_room", roomInput.value);
-};
-/* ---------------------------------------------------------
-   Supabase Init
---------------------------------------------------------- */
-const supabase = window.supabase.createClient(
-  "https://fmrkkwlmtxzeytjcllag.supabase.co",
-  "sb_publishable_8MblOgh8PGTV7Xq3Eg_LNg_0RUtV7cR"
-);
-
-/* ---------------------------------------------------------
-   記帳：載入清單
---------------------------------------------------------- */
-async function loadExpenses(){
-  const { data } = await supabase
-    .from("budgets")
-    .select("*")
-    .eq("trip_id", "osaka-2024")
-    .order("created_at", { ascending: true });
-
-  renderExpenses(data || []);
-}
-
-/* ---------------------------------------------------------
-   記帳：渲染列表 + 結算
---------------------------------------------------------- */
-function renderExpenses(rows){
-  let html = "";
-  let totalJPY = 0;
-  let byPayer = { 羊:0, 熙:0 };
-
-  rows.forEach(r => {
-    const jpy = Number(r.amount);
-    const twd = Math.round(jpy * rateJPYtoTWD);
-
-    totalJPY += jpy;
-    byPayer[r.payer] += twd;
-
-    html += `
-      <div class="expense-item" id="exp-${r.id}">
-        <div>
-          ${r.payer}：${jpy} JPY ≈ ${twd} TWD
-          <div class="expense-note">${r.note || ""}</div>
-        </div>
-        <div class="menu-btn" onclick="openMenu('${r.id}', event)">⋮</div>
-      </div>
-    `;
-  });
-
-  document.getElementById("expense-list").innerHTML = html;
-
-  const totalTWD = Math.round(totalJPY * rateJPYtoTWD);
-  document.getElementById("expense-total").textContent =
-    `總計：${totalJPY} JPY ／ ${totalTWD} TWD`;
-
-  /* --- AA 結算（方式 B，一句話） --- */
-  const each = Math.round(totalTWD / 2);
-  const diff = each - byPayer["熙"];
-
-  let result = "";
-  if (diff > 0) result = `熙 → 羊：${diff} TWD`;
-  else if (diff < 0) result = `羊 → 熙：${-diff} TWD`;
-  else result = `完全平分。`;
-
-  document.getElementById("settlement").textContent = result;
-}
-
-/* ---------------------------------------------------------
-   記帳：三點選單
---------------------------------------------------------- */
-function openMenu(id, event){
-  closeAllMenus();
-
-  const panel = document.createElement("div");
-  panel.className = "menu-panel show";
-  panel.innerHTML = `
-    <div class="menu-item" onclick="editItem('${id}')">編輯</div>
-    <div class="menu-item" onclick="deleteItem('${id}')">刪除</div>
-  `;
-
-  document.body.appendChild(panel);
-
-  const rect = event.target.getBoundingClientRect();
-  panel.style.left = rect.left - 90 + "px";
-  panel.style.top = rect.bottom + "px";
-}
-
-function closeAllMenus(){
-  document.querySelectorAll(".menu-panel").forEach(p => p.remove());
-}
-
-document.body.onclick = (e) => {
-  if (!e.target.classList.contains("menu-btn")) closeAllMenus();
-};
-
-/* ---------------------------------------------------------
-   記帳：刪除
---------------------------------------------------------- */
-async function deleteItem(id){
-  await supabase.from("budgets").delete().eq("id", id);
-  closeAllMenus();
-  loadExpenses();
-}
-
-/* ---------------------------------------------------------
-   記帳：編輯
---------------------------------------------------------- */
-async function editItem(id){
-  closeAllMenus();
-
-  const newJPY = prompt("新的金額（JPY）");
-  if (!newJPY) return;
-
-  const newNote = prompt("備註（可空白）") || null;
-
-  await supabase.from("budgets")
-    .update({ amount: newJPY, note: newNote })
-    .eq("id", id);
-
-  loadExpenses();
-}
-
-/* ---------------------------------------------------------
-   記帳：新增
---------------------------------------------------------- */
-document.getElementById("expense-form").onsubmit = async (e)=>{
-  e.preventDefault();
-
-  const amount = Number(document.getElementById("exp-amount").value);
-  const payer  = document.getElementById("exp-payer").value;
-  const note   = document.getElementById("exp-note").value.trim();
-
-  await supabase.from("budgets").insert([{
-    trip_id: "osaka-2024",
-    amount: amount,
-    payer: payer,
-    note: note || null
-  }]);
-
-  document.getElementById("exp-amount").value = "";
-  document.getElementById("exp-note").value = "";
-
-  loadExpenses();
-};
-
-/* ---------------------------------------------------------
-   Tab 切換
---------------------------------------------------------- */
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-
-    const tab = btn.dataset.tab;
-    document.querySelectorAll(".tab-content").forEach(t=>{
-      t.classList.remove("active");
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.getAttribute("data-tab");
+      tabButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      tabContents.forEach(c => c.classList.remove("active"));
+      document.getElementById(`tab-${target}`).classList.add("active");
     });
-    document.getElementById(`tab-${tab}`).classList.add("active");
-  };
-});
+  });
 
-/* ---------------------------------------------------------
-   Service Worker（相對路徑 for GitHub Pages）
---------------------------------------------------------- */
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js");
-}
+  /* -----------------------------
+     台銀匯率抓取
+  ----------------------------- */
+  let rateJPYtoTWD = 0;
 
-/* ---------------------------------------------------------
-   初始化（放在最後避免 JS 執行時 DOM 尚未生成）
---------------------------------------------------------- */
-async function init(){
-  await fetchRate();        // 讀匯率
-  renderDayChips();         // 渲染 Day tab
-  renderDay("day1");        // 初始顯示 Day1
-  await loadExpenses();     // 載入記帳
-}
+  async function fetchRate() {
+    try {
+      const res  = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW");
+      const html = await res.text();
+      const doc  = new DOMParser().parseFromString(html, "text/html");
+      const rows = doc.querySelectorAll("table tbody tr");
 
-window.onload = init;
+      rows.forEach(tr => {
+        if (tr.innerText.includes("JPY")) {
+          const tds = tr.querySelectorAll("td");
+          const sell = parseFloat(tds[5].innerText);
+          if (!isNaN(sell)) {
+            rateJPYtoTWD = sell;
+          }
+        }
+      });
+      console.log("匯率讀取成功：", rateJPYtoTWD);
+    } catch (err) {
+      console.error("匯率讀取失敗，改用預設0.2：", err);
+      rateJPYtoTWD = 0.2;
+    }
+  }
+
+  /* -----------------------------
+     Supabase 初始化
+  ----------------------------- */
+  const supabaseClient = window.supabase.createClient(
+    "https://fmrkkwlmtxzeytjcllag.supabase.co",
+    "sb_publishable_8MblOgh8PGTV7Xq3Eg_LNg_0RUtV7cR"
+  );
+
+  /* -----------------------------
+     記帳：讀取資料
+  ----------------------------- */
+  async function loadExpenses() {
+    const { data, error } = await supabaseClient
+      .from("budgets")
+      .select("*")
+      .eq("trip_id", "osaka-2025")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("讀取記帳失敗", error);
+      return;
+    }
+
+    renderExpenses(data || []);
+  }
+
+  function renderExpenses(rows) {
+    const listEl   = document.getElementById("expense-list");
+    const totalEl  = document.getElementById("expense-total");
+    const settleEl = document.getElementById("settlement");
+
+    listEl.innerHTML = "";
+
+    let totalJPY = 0;
+    let byPayer = { "羊": 0, "熙": 0 };
+
+    rows.forEach(row => {
+      const jpy = Number(row.amount) || 0;
+      totalJPY += jpy;
+
+      const twd = rateJPYtoTWD ? Math.round(jpy * rateJPYtoTWD) : 0;
+      if (row.payer && byPayer[row.payer] !== undefined) {
+        byPayer[row.payer] += twd;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "expense-item";
+      wrapper.id = `exp-${row.id}`;
+      wrapper.innerHTML = `
+        <div>
+          <div><strong>${row.payer}</strong> 支付 ${jpy} JPY ≈ ${twd} TWD</div>
+          <div class="expense-note">${row.note || ""}</div>
+        </div>
+        <div class="menu-btn" onclick="openMenu('${row.id}', event)">⋮</div>
+      `;
+      listEl.appendChild(wrapper);
+    });
+
+    const totalTWD = rateJPYtoTWD ? Math.round(totalJPY * rateJPYtoTWD) : 0;
+    totalEl.textContent = `總計：${totalJPY} JPY（約 ${totalTWD} TWD）`;
+
+    // AA 結算（方式：看各自已付金額，算誰要給誰）
+    const each = Math.round(totalTWD / 2);
+    const paySheep = byPayer["羊"];
+    const payXi    = byPayer["熙"];
+    // 我們假設 target 是「兩人最後應該各出 each」
+    const diff = payXi - each; // >0 表示熙多付，要收錢
+
+    let text = "";
+    if (totalTWD === 0) {
+      text = "目前還沒有記帳資料。";
+    } else if (diff > 0) {
+      // 熙多付
+      text = `羊 → 熙：${diff} TWD`;
+    } else if (diff < 0) {
+      // 羊多付
+      text = `熙 → 羊：${-diff} TWD`;
+    } else {
+      text = "完全平分，誰也不用補。";
+    }
+    settleEl.textContent = text;
+  }
+
+  /* -----------------------------
+     記帳：三點選單（編輯 / 刪除）
+  ----------------------------- */
+  let currentMenu = null;
+
+  function openMenu(id, event) {
+    closeMenu();
+
+    const panel = document.createElement("div");
+    panel.className = "menu-panel show";
+    panel.innerHTML = `
+      <div class="menu-item" onclick="editExpense('${id}')">編輯</div>
+      <div class="menu-item" onclick="deleteExpense('${id}')">刪除</div>
+    `;
+
+    document.body.appendChild(panel);
+    currentMenu = panel;
+
+    const rect = event.target.getBoundingClientRect();
+    panel.style.left = (rect.right - 120) + "px";
+    panel.style.top  = (rect.bottom + 4) + "px";
+  }
+
+  function closeMenu() {
+    if (currentMenu) {
+      currentMenu.remove();
+      currentMenu = null;
+    }
+  }
+
+  document.body.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("menu-btn")) {
+      closeMenu();
+    }
+  });
+
+  async function deleteExpense(id) {
+    const ok = confirm("確定要刪除這筆記帳嗎？");
+    if (!ok) return;
+
+    const { error } = await supabaseClient
+      .from("budgets")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("刪除失敗，請稍後再試");
+      console.error(error);
+      return;
+    }
+    closeMenu();
+    loadExpenses();
+  }
+
+  async function editExpense(id) {
+    closeMenu();
+
+    const newAmount = prompt("請輸入新的金額（日幣）：");
+    if (newAmount === null) return;
+    const amt = Number(newAmount);
+    if (isNaN(amt) || amt <= 0) {
+      alert("金額必須是正數");
+      return;
+    }
+    const newNote = prompt("請輸入備註（可留空）：") || "";
+
+    const { error } = await supabaseClient
+      .from("budgets")
+      .update({ amount: amt, note: newNote })
+      .eq("id", id);
+
+    if (error) {
+      alert("更新失敗，請稍後再試");
+      console.error(error);
+      return;
+    }
+    loadExpenses();
+  }
+
+  /* -----------------------------
+     記帳：新增
+  ----------------------------- */
+  const expenseForm = document.getElementById("expense-form");
+  expenseForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const amtInput  = document.getElementById("exp-amount");
+    const payerSel  = document.getElementById("exp-payer");
+    const noteInput = document.getElementById("exp-note");
+
+    const amount = Number(amtInput.value);
+    if (isNaN(amount) || amount <= 0) {
+      alert("金額必須是正數");
+      return;
+    }
+    const payer = payerSel.value;
+    const note  = noteInput.value.trim();
+
+    const { error } = await supabaseClient
+      .from("budgets")
+      .insert([{
+        trip_id: "osaka-2025",
+        amount: amount,
+        payer: payer,
+        note: note || null
+      }]);
+
+    if (error) {
+      alert("新增失敗，請稍後再試");
+      console.error(error);
+      return;
+    }
+
+    amtInput.value  = "";
+    noteInput.value = "";
+    loadExpenses();
+  });
+
+  /* -----------------------------
+     Service Worker（PWA）
+  ----------------------------- */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("Service Worker 註冊成功"))
+      .catch(err => console.error("Service Worker 註冊失敗", err));
+  }
+
+  /* -----------------------------
+     初始化
+  ----------------------------- */
+  async function init() {
+    loadRoomNumber();
+    await fetchRate();
+    await loadExpenses();
+  }
+
+  window.addEventListener("load", init);
 </script>
 
 </body>
