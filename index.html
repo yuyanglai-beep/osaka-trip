@@ -120,7 +120,7 @@
       display: block;
     }
 
-    /* Day header card */
+    /* Day header card（行程用，只在右側） */
     .day-header-card {
       background: linear-gradient(135deg, #fff7ed, #ffe4e6);
       border-radius: var(--radius-lg);
@@ -459,7 +459,7 @@
       color: #b91c1c;
     }
 
-    /* 底部 Tab Bar */
+    /* 底部 Tab Bar：行程 / 資訊 / 記帳 */
     .tabs {
       position: fixed;
       left: 50%;
@@ -599,7 +599,12 @@
       color: #e5e7eb;
     }
 
-    /* 天氣卡片 */
+    /* 天氣卡片（Info Tab 裡） */
+    #weather-card {
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
     .weather-now {
       display: flex;
       align-items: center;
@@ -630,7 +635,7 @@
       color: #6b7280;
     }
 
-    .weather-icon {
+    .weather-icon-box {
       width: 56px;
       height: 56px;
       border-radius: 18px;
@@ -641,7 +646,7 @@
       overflow: hidden;
     }
 
-    .weather-icon img {
+    .weather-icon-box img {
       width: 48px;
       height: 48px;
     }
@@ -689,6 +694,127 @@
       border-color: #fecaca;
     }
 
+    /* 行程 Tab：左側 Day 列表 + 右側 timeline */
+    .plan-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .plan-split {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .day-list {
+      width: 110px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 4px;
+      align-self: flex-start;
+    }
+
+    .day-pill {
+      border-radius: 18px;
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      font-size: 12px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.92);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      color: #475569;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.1s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .day-pill span {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .day-pill.active {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .day-pill.active span {
+      color: #ffe4e6;
+    }
+
+    .plan-timeline-container {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .day-timeline {
+      display: none;
+    }
+
+    .day-timeline.active {
+      display: block;
+    }
+
+    /* 小螢幕：Day 列表變成滑出的抽屜 */
+    .day-drawer-toggle {
+      display: none;
+    }
+
+    @media (max-width: 719px) {
+      .plan-split {
+        position: relative;
+      }
+
+      .day-list {
+        position: fixed;
+        left: 12px;
+        top: 70px; /* 大約 header 底下，可視情況微調 */
+        bottom: 80px;
+        background: rgba(248, 250, 252, 0.98);
+        padding: 10px 8px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.3);
+        transform: translateX(-140%);
+        transition: transform 0.2s ease-out;
+        z-index: 45;
+        width: 150px;
+        overflow-y: auto;
+      }
+
+      .day-list.open {
+        transform: translateX(0);
+      }
+
+      .day-drawer-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 6px 10px;
+        font-size: 12px;
+        color: #0f172a;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        margin-bottom: 8px;
+      }
+
+      .day-drawer-toggle span {
+        font-size: 14px;
+      }
+    }
+
     /* Responsive tweaks */
     @media (min-width: 720px) {
       .content {
@@ -716,297 +842,331 @@
   </header>
 
   <main class="content">
-    <!-- Day1 -->
-    <section id="tab-day1" class="tab-content active">
-      <div class="day-header-card">
-        <div class="day-title">
-          12/5（五） Day 1
-          <span class="day-chip">早班機＋大阪城＋道頓堀</span>
-        </div>
-        <div class="day-highlight">
-          ✈️ 抵達關西 → 🚄 南海特急到難波 → 🏯 大阪城 → 🛍 心齋橋 & 道頓堀
-        </div>
-      </div>
+    <!-- 行程 Tab -->
+    <section id="tab-plan" class="tab-content active">
+      <div class="plan-layout">
+        <button class="day-drawer-toggle" id="day-drawer-toggle">
+          <span>📅</span> 選擇天數
+        </button>
 
-      <div class="timeline">
-        <article class="event-card" onclick="openModal(day1[0], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">02:30 → 06:00</div>
-            <div class="event-tag">✈️ 去程 · GK050</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">GK050 桃園 T1 → 關西 T1</div>
-            <div class="event-desc">紅眼班機抵達關西，先醒醒腦、慢慢出關。</div>
-          </div>
-        </article>
+        <div class="plan-split">
+          <!-- 左側 Day 列表 -->
+          <aside class="day-list" id="day-list">
+            <button class="day-pill active" data-day="day1">
+              12/5（五）
+              <span>大阪城＋心齋橋</span>
+            </button>
+            <button class="day-pill" data-day="day2">
+              12/6（六）
+              <span>黑門市場＋巨蛋</span>
+            </button>
+            <button class="day-pill" data-day="day3">
+              12/7（日）
+              <span>勝尾寺＋梅田</span>
+            </button>
+            <button class="day-pill" data-day="day4">
+              12/8（一）
+              <span>退房＋回家</span>
+            </button>
+          </aside>
 
-        <article class="event-card" onclick="openModal(day1[1], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">07:30 → 09:00</div>
-            <div class="event-tag">🚄 南海特急</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">南海特急 → 難波</div>
-            <div class="event-desc">搭拉皮特／南海特急進大阪市區，正式開啟旅程。</div>
-            <div class="event-pill-row">
-              <span class="event-pill">車票可預先購買</span>
+          <!-- 右側單日行程 timeline -->
+          <div class="plan-timeline-container">
+            <!-- Day 1 Timeline -->
+            <div class="day-timeline active" data-day="day1">
+              <div class="day-header-card">
+                <div class="day-title">
+                  12/5（五） Day 1
+                  <span class="day-chip">早班機＋大阪城＋道頓堀</span>
+                </div>
+                <div class="day-highlight">
+                  ✈️ 抵達關西 → 🚄 南海特急到難波 → 🏯 大阪城 → 🛍 心齋橋 & 道頓堀
+                </div>
+              </div>
+
+              <div class="timeline">
+                <article class="event-card" onclick="openModal(day1[0], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">02:30 → 06:00</div>
+                    <div class="event-tag">✈️ 去程 · GK050</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">GK050 桃園 T1 → 關西 T1</div>
+                    <div class="event-desc">紅眼班機抵達關西，先醒醒腦、慢慢出關。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[1], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">07:30 → 09:00</div>
+                    <div class="event-tag">🚄 南海特急</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">南海特急 → 難波</div>
+                    <div class="event-desc">搭拉皮特／南海特急進大阪市區，正式開啟旅程。</div>
+                    <div class="event-pill-row">
+                      <span class="event-pill">車票可預先購買</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[2], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">09:30 → 10:00</div>
+                    <div class="event-tag">🧳 飯店寄物</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">寄行李</div>
+                    <div class="event-desc">先到 Dormy Inn Premium Nanba ANNEX 寄放行李，解放雙手。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[3], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">10:30 → 12:30</div>
+                    <div class="event-tag">🏯 城堡散步</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">大阪城散策</div>
+                    <div class="event-desc">在大阪城公園散步、拍照，視體力決定要不要進天守閣。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[4], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">13:30 → 14:30</div>
+                    <div class="event-tag">🥩 牛舌午餐</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">午餐：吉次牛舌 鰻谷店</div>
+                    <div class="event-desc">厚切牛舌配麥飯，補回早班機的體力。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[5], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">15:30 → 16:30</div>
+                    <div class="event-tag">☕ 下午茶 & Check-in</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">Check-in & 下午茶</div>
+                    <div class="event-desc">回飯店 check-in，再到心齋橋附近喝咖啡、吃甜點。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[6], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">17:30 → 19:00</div>
+                    <div class="event-tag">🍽 晚餐</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">晚餐：板前燒肉一斗／大起水產</div>
+                    <div class="event-desc">看當天心情決定是燒肉還是迴轉壽司。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day1[7], '12/5')">
+                  <div class="event-time-block">
+                    <div class="event-time">19:00 → 21:30</div>
+                    <div class="event-tag">🛍 夜逛道頓堀</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">道頓堀 & 心齋橋逛街</div>
+                    <div class="event-desc">章魚燒、扭蛋、藥妝、跑跑人、摩天輪、美國村一次蒐集。</div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <!-- Day 2 Timeline -->
+            <div class="day-timeline" data-day="day2">
+              <div class="day-header-card">
+                <div class="day-title">
+                  12/6（六） Day 2
+                  <span class="day-chip">黑門市場＋新世界＋Seventeen</span>
+                </div>
+                <div class="day-highlight">
+                  🍣 黑門市場開吃 → ⛩ 難波八阪神社 → 🗼 通天閣新世界 → 🎤 京瓷巨蛋演唱會
+                </div>
+              </div>
+
+              <div class="timeline">
+                <article class="event-card" onclick="openModal(day2[0], '12/6')">
+                  <div class="event-time-block">
+                    <div class="event-time">09:00 → 10:30</div>
+                    <div class="event-tag">🍣 早午餐行程</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">黑門市場</div>
+                    <div class="event-desc">鮪魚、蟹腳、關東煮、小吃，邊逛邊吃的海鮮市場。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day2[1], '12/6')">
+                  <div class="event-time-block">
+                    <div class="event-time">11:00 → 12:30</div>
+                    <div class="event-tag">🏙 難波散步</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">難波商圈 & 難波八阪神社</div>
+                    <div class="event-desc">逛百貨，順路去看巨大獅子頭神社，拍幾張酷照。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day2[2], '12/6')">
+                  <div class="event-time-block">
+                    <div class="event-time">13:30 → 15:30</div>
+                    <div class="event-tag">🗼 新世界</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">午餐 & 通天閣 新世界</div>
+                    <div class="event-desc">通天閣周邊、達摩串炸、Usagiya 甜點，老大阪氛圍。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day2[3], '12/6')">
+                  <div class="event-time-block">
+                    <div class="event-time">16:00 → 21:00</div>
+                    <div class="event-tag">🎤 Seventeen</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">Seventeen in 大阪京瓷巨蛋</div>
+                    <div class="event-desc">16:00 開始入場，記得票券、手燈、應援物全部帶好。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day2[4], '12/6')">
+                  <div class="event-time-block">
+                    <div class="event-time">21:30 → 23:00</div>
+                    <div class="event-tag">🌃 宵夜</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">演唱會後晚餐</div>
+                    <div class="event-desc">回難波吃一蘭或串燒，好好收尾今天的行程。</div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <!-- Day 3 Timeline -->
+            <div class="day-timeline" data-day="day3">
+              <div class="day-header-card">
+                <div class="day-title">
+                  12/7（日） Day 3
+                  <span class="day-chip">勝尾寺＋梅田逛街</span>
+                </div>
+                <div class="day-highlight">
+                  ☕ 輕鬆早午餐 → ⛩ 勝尾寺達摩籤 → 🏙 梅田逛街 & 甜點 → 🍽 梅田晚餐
+                </div>
+              </div>
+
+              <div class="timeline">
+                <article class="event-card" onclick="openModal(day3[0], '12/7')">
+                  <div class="event-time-block">
+                    <div class="event-time">08:00 → 09:00</div>
+                    <div class="event-tag">☕ Brunch</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">早午餐</div>
+                    <div class="event-desc">客美多、HARBS 或附近咖啡廳，挑一間喜歡的慢慢吃。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day3[1], '12/7')">
+                  <div class="event-time-block">
+                    <div class="event-time">11:00 → 14:30</div>
+                    <div class="event-tag">⛩ 勝尾寺</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">勝尾寺半日遊</div>
+                    <div class="event-desc">搭到箕面萱野轉巴士上山，買達摩籤、蓋章、拍照看風景。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day3[2], '12/7')">
+                  <div class="event-time-block">
+                    <div class="event-time">15:00 → 16:30</div>
+                    <div class="event-tag">🍱 午餐</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">梅田 午餐</div>
+                    <div class="event-desc">new babe 炸豬排或其他梅田車站附近的餐廳。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day3[3], '12/7')">
+                  <div class="event-time-block">
+                    <div class="event-time">17:00 → 19:00</div>
+                    <div class="event-tag">🍰 甜點 & 逛街</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">梅田 甜點 & 逛街</div>
+                    <div class="event-desc">LUCUA、HEP FIVE、大丸梅田逛一圈，吃千層酥或 HARBS。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day3[4], '12/7')">
+                  <div class="event-time-block">
+                    <div class="event-time">19:00 → 21:00</div>
+                    <div class="event-tag">🍽 晚餐</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">梅田 晚餐</div>
+                    <div class="event-desc">炸牛元村或其他居酒屋，依當天心情選一家收尾。</div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <!-- Day 4 Timeline -->
+            <div class="day-timeline" data-day="day4">
+              <div class="day-header-card">
+                <div class="day-title">
+                  12/8（一） Day 4
+                  <span class="day-chip">退房＋回家日</span>
+                </div>
+                <div class="day-highlight">
+                  🧳 退房 → 🚄 南海特急 → ✈️ KIX → 🏠 回桃園
+                </div>
+              </div>
+
+              <div class="timeline">
+                <article class="event-card" onclick="openModal(day4Data[0], '12/8')">
+                  <div class="event-time-block">
+                    <div class="event-time">08:00</div>
+                    <div class="event-tag">🧳 Check-out</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">退房</div>
+                    <div class="event-desc">確認行李、票券、護照、戰利品都收好了再出門。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day4Data[1], '12/8')">
+                  <div class="event-time-block">
+                    <div class="event-time">09:00 → 10:00</div>
+                    <div class="event-tag">🚄 前往機場</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">南海特急 → 關西空港</div>
+                    <div class="event-desc">從難波搭南海特急前往關西機場，預留時間辦理登機。</div>
+                  </div>
+                </article>
+
+                <article class="event-card" onclick="openModal(day4Data[2], '12/8')">
+                  <div class="event-time-block">
+                    <div class="event-time">12:55 → 15:05</div>
+                    <div class="event-tag">✈️ 回程 · BR131</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-title">BR131 關西 → 桃園</div>
+                    <div class="event-desc">結束四天三夜大阪旅程，帶著照片與戰利品回家。</div>
+                  </div>
+                </article>
+              </div>
             </div>
           </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[2], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">09:30 → 10:00</div>
-            <div class="event-tag">🧳 飯店寄物</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">寄行李</div>
-            <div class="event-desc">先到 Dormy Inn Premium Nanba ANNEX 寄放行李，解放雙手。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[3], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">10:30 → 12:30</div>
-            <div class="event-tag">🏯 城堡散步</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">大阪城散策</div>
-            <div class="event-desc">在大阪城公園散步、拍照，視體力決定要不要進天守閣。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[4], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">13:30 → 14:30</div>
-            <div class="event-tag">🥩 牛舌午餐</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">午餐：吉次牛舌 鰻谷店</div>
-            <div class="event-desc">厚切牛舌配麥飯，補回早班機的體力。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[5], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">15:30 → 16:30</div>
-            <div class="event-tag">☕ 下午茶 & Check-in</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">Check-in & 下午茶</div>
-            <div class="event-desc">回飯店 check-in，再到心齋橋附近喝咖啡、吃甜點。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[6], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">17:30 → 19:00</div>
-            <div class="event-tag">🍽 晚餐</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">晚餐：板前燒肉一斗／大起水產</div>
-            <div class="event-desc">看當天心情決定是燒肉還是迴轉壽司。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day1[7], '12/5')">
-          <div class="event-time-block">
-            <div class="event-time">19:00 → 21:30</div>
-            <div class="event-tag">🛍 夜逛道頓堀</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">道頓堀 & 心齋橋逛街</div>
-            <div class="event-desc">章魚燒、扭蛋、藥妝、跑跑人、摩天輪、美國村一次蒐集。</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Day2 -->
-    <section id="tab-day2" class="tab-content">
-      <div class="day-header-card">
-        <div class="day-title">
-          12/6（六） Day 2
-          <span class="day-chip">黑門市場＋新世界＋Seventeen</span>
         </div>
-        <div class="day-highlight">
-          🍣 黑門市場開吃 → ⛩ 難波八阪神社 → 🗼 通天閣新世界 → 🎤 京瓷巨蛋演唱會
-        </div>
-      </div>
-
-      <div class="timeline">
-        <article class="event-card" onclick="openModal(day2[0], '12/6')">
-          <div class="event-time-block">
-            <div class="event-time">09:00 → 10:30</div>
-            <div class="event-tag">🍣 早午餐行程</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">黑門市場</div>
-            <div class="event-desc">鮪魚、蟹腳、關東煮、小吃，邊逛邊吃的海鮮市場。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day2[1], '12/6')">
-          <div class="event-time-block">
-            <div class="event-time">11:00 → 12:30</div>
-            <div class="event-tag">🏙 難波散步</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">難波商圈 & 難波八阪神社</div>
-            <div class="event-desc">逛百貨，順路去看巨大獅子頭神社，拍幾張酷照。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day2[2], '12/6')">
-          <div class="event-time-block">
-            <div class="event-time">13:30 → 15:30</div>
-            <div class="event-tag">🗼 新世界</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">午餐 & 通天閣 新世界</div>
-            <div class="event-desc">通天閣周邊、達摩串炸、Usagiya 甜點，老大阪氛圍。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day2[3], '12/6')">
-          <div class="event-time-block">
-            <div class="event-time">16:00 → 21:00</div>
-            <div class="event-tag">🎤 Seventeen</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">Seventeen in 大阪京瓷巨蛋</div>
-            <div class="event-desc">16:00 開始入場，記得票券、手燈、應援物全部帶好。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day2[4], '12/6')">
-          <div class="event-time-block">
-            <div class="event-time">21:30 → 23:00</div>
-            <div class="event-tag">🌃 宵夜</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">演唱會後晚餐</div>
-            <div class="event-desc">回難波吃一蘭或串燒，好好收尾今天的行程。</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Day3 -->
-    <section id="tab-day3" class="tab-content">
-      <div class="day-header-card">
-        <div class="day-title">
-          12/7（日） Day 3
-          <span class="day-chip">勝尾寺＋梅田逛街</span>
-        </div>
-        <div class="day-highlight">
-          ☕ 輕鬆早午餐 → ⛩ 勝尾寺達摩籤 → 🏙 梅田逛街 & 甜點 → 🍽 梅田晚餐
-        </div>
-      </div>
-
-      <div class="timeline">
-        <article class="event-card" onclick="openModal(day3[0], '12/7')">
-          <div class="event-time-block">
-            <div class="event-time">08:00 → 09:00</div>
-            <div class="event-tag">☕ Brunch</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">早午餐</div>
-            <div class="event-desc">客美多、HARBS 或附近咖啡廳，挑一間喜歡的慢慢吃。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day3[1], '12/7')">
-          <div class="event-time-block">
-            <div class="event-time">11:00 → 14:30</div>
-            <div class="event-tag">⛩ 勝尾寺</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">勝尾寺半日遊</div>
-            <div class="event-desc">搭到箕面萱野轉巴士上山，買達摩籤、蓋章、拍照看風景。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day3[2], '12/7')">
-          <div class="event-time-block">
-            <div class="event-time">15:00 → 16:30</div>
-            <div class="event-tag">🍱 午餐</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">梅田 午餐</div>
-            <div class="event-desc">new babe 炸豬排或其他梅田車站附近的餐廳。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day3[3], '12/7')">
-          <div class="event-time-block">
-            <div class="event-time">17:00 → 19:00</div>
-            <div class="event-tag">🍰 甜點 & 逛街</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">梅田 甜點 & 逛街</div>
-            <div class="event-desc">LUCUA、HEP FIVE、大丸梅田逛一圈，吃千層酥或 HARBS。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day3[4], '12/7')">
-          <div class="event-time-block">
-            <div class="event-time">19:00 → 21:00</div>
-            <div class="event-tag">🍽 晚餐</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">梅田 晚餐</div>
-            <div class="event-desc">炸牛元村或其他居酒屋，依當天心情選一家收尾。</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Day4 -->
-    <section id="tab-day4" class="tab-content">
-      <div class="day-header-card">
-        <div class="day-title">
-          12/8（一） Day 4
-          <span class="day-chip">退房＋回家日</span>
-        </div>
-        <div class="day-highlight">
-          🧳 退房 → 🚄 南海特急 → ✈️ KIX → 🏠 回桃園
-        </div>
-      </div>
-
-      <div class="timeline">
-        <article class="event-card" onclick="openModal(day4[0], '12/8')">
-          <div class="event-time-block">
-            <div class="event-time">08:00</div>
-            <div class="event-tag">🧳 Check-out</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">退房</div>
-            <div class="event-desc">確認行李、票券、護照、戰利品都收好了再出門。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day4[1], '12/8')">
-          <div class="event-time-block">
-            <div class="event-time">09:00 → 10:00</div>
-            <div class="event-tag">🚄 前往機場</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">南海特急 → 關西空港</div>
-            <div class="event-desc">從難波搭南海特急前往關西機場，預留時間辦理登機。</div>
-          </div>
-        </article>
-
-        <article class="event-card" onclick="openModal(day4[2], '12/8')">
-          <div class="event-time-block">
-            <div class="event-time">12:55 → 15:05</div>
-            <div class="event-tag">✈️ 回程 · BR131</div>
-          </div>
-          <div class="event-main">
-            <div class="event-title">BR131 關西 → 桃園</div>
-            <div class="event-desc">結束四天三夜大阪旅程，帶著照片與戰利品回家。</div>
-          </div>
-        </article>
       </div>
     </section>
 
@@ -1025,7 +1185,7 @@
               <div id="weather-desc">讀取中...</div>
               <div id="weather-temp-range">高 --° / 低 --° · 體感 --°</div>
             </div>
-            <div class="weather-icon" id="weather-icon">
+            <div class="weather-icon-box" id="weather-icon-box">
               <!-- icon -->
             </div>
           </div>
@@ -1033,18 +1193,17 @@
           <div class="weather-forecast-row" id="weather-forecast-row"></div>
         </div>
 
+        <!-- 住宿資訊＋地圖按鈕＋房號 -->
         <div class="info-card">
           <div class="info-title-row">
             <div class="info-title">🏨 住宿資訊</div>
             <span class="info-tag">Dormy Inn Premium Nanba ANNEX</span>
           </div>
-        
-          <!-- 地址文字 -->
+
           <div class="info-line">
             地址：大阪市中央区日本橋1丁目4-18（Dormy Inn Premium Nanba Annex）
           </div>
-        
-          <!-- 地圖按鈕 -->
+
           <button
             onclick="window.open('https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Premium+Nanba+Annex', '_blank')"
             style="
@@ -1060,24 +1219,8 @@
             ">
             查看 Google Maps 地圖
           </button>
-        
-          <!-- 房號 -->
-          <div class="info-line" style="margin-top:12px;">
-            <strong>房號：</strong>
-            <span id="roomNumberDisplay">尚未設定</span>
-          </div>
-        
-          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
-            <input id="roomNumberInput" type="number" placeholder="例如 608"
-              style="padding:8px 10px;border-radius:999px;border:1px solid #cbd5e1;font-size:13px;width:120px;">
-            <button onclick="saveRoomNumber()"
-              style="border-radius:999px;border:none;background:#0ea5e9;color:white;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">
-              儲存房號
-            </button>
-          </div>
-        </div>
 
-          <div class="info-line" style="margin-top:8px;">
+          <div class="info-line" style="margin-top:12px;">
             <strong>房號：</strong>
             <span id="roomNumberDisplay">尚未設定</span>
           </div>
@@ -1162,10 +1305,7 @@
 
   <!-- Tab Bar -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="day1">Day 1</button>
-    <button class="tab-btn" data-tab="day2">Day 2</button>
-    <button class="tab-btn" data-tab="day3">Day 3</button>
-    <button class="tab-btn" data-tab="day4">Day 4</button>
+    <button class="tab-btn active" data-tab="plan">行程</button>
     <button class="tab-btn" data-tab="info">資訊</button>
     <button class="tab-btn" data-tab="money">記帳</button>
   </nav>
@@ -1308,7 +1448,7 @@
     }
   ];
 
-  const day4 = [
+  const day4Data = [
     {
       title: "退房",
       placeName: "Dormy Inn Premium Nanba ANNEX",
@@ -1419,7 +1559,7 @@
     }
   }
 
-  /* -------- Tabs -------- */
+  /* -------- Tabs（行程 / 資訊 / 記帳） -------- */
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
 
@@ -1433,6 +1573,38 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
+
+  /* -------- 行程左側 Day 切換 -------- */
+  const dayListEl = document.getElementById("day-list");
+  const dayDrawerToggle = document.getElementById("day-drawer-toggle");
+  const dayPills = document.querySelectorAll(".day-pill");
+  const dayTimelines = document.querySelectorAll(".day-timeline");
+
+  dayPills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      const dayKey = pill.getAttribute("data-day");
+
+      dayPills.forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+
+      dayTimelines.forEach((tl) => {
+        tl.classList.toggle("active", tl.getAttribute("data-day") === dayKey);
+      });
+
+      // 手機：選完 day 收起抽屜
+      if (window.innerWidth < 720 && dayListEl) {
+        dayListEl.classList.remove("open");
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  if (dayDrawerToggle && dayListEl) {
+    dayDrawerToggle.addEventListener("click", () => {
+      dayListEl.classList.toggle("open");
+    });
+  }
 
   /* -------- 匯率（台銀） -------- */
   let rateJPYtoTWD = 0;
@@ -1641,7 +1813,7 @@
     loadExpenses();
   });
 
-  /* -------- 天氣（OpenWeather） -------- */
+  /* -------- 天氣（OpenWeather 現在＋幾個時段） -------- */
   const OPENWEATHER_API_KEY = "807111d60af9f37403e02a8705d2ec1e";
   const OSAKA_LAT = 34.6937;
   const OSAKA_LON = 135.5023;
@@ -1694,7 +1866,7 @@
     const tempMainEl = document.getElementById("weather-temp-main");
     const descEl = document.getElementById("weather-desc");
     const rangeEl = document.getElementById("weather-temp-range");
-    const iconBox = document.getElementById("weather-icon");
+    const iconBox = document.getElementById("weather-icon-box");
     const forecastRow = document.getElementById("weather-forecast-row");
 
     if (!now || !now.main || !Array.isArray(now.weather)) return;
@@ -1794,4 +1966,3 @@
 </script>
 </body>
 </html>
-
