@@ -2,8 +2,14 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>大阪四天三夜｜行程 & 記帳 App</title>
+
+  <!-- iOS Web App 設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Osaka Trip" />
 
   <style>
     :root {
@@ -24,10 +30,15 @@
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Helvetica, Arial, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: radial-gradient(circle at top, #fff5f2 0, #f8fafc 45%, #e2f3ff 100%);
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
@@ -40,6 +51,11 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      padding:
+        env(safe-area-inset-top)
+        env(safe-area-inset-right)
+        calc(env(safe-area-inset-bottom))
+        env(safe-area-inset-left);
     }
 
     header {
@@ -49,7 +65,7 @@
       backdrop-filter: blur(16px);
       background: linear-gradient(
         120deg,
-        rgba(255, 255, 255, 0.94),
+        rgba(255, 255, 255, 0.96),
         rgba(255, 255, 255, 0.9)
       );
       border-bottom: 1px solid rgba(148, 163, 184, 0.25);
@@ -63,7 +79,7 @@
     }
 
     .app-title {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: 0.04em;
       color: #111827;
@@ -74,46 +90,26 @@
       color: #6b7280;
     }
 
-    /* Tabs */
-    .tabs {
+    .weather-brief {
+      font-size: 12px;
+      color: #0f766e;
+      margin-top: 2px;
       display: flex;
-      gap: 6px;
-      padding: 8px 10px 10px;
-      overflow-x: auto;
+      align-items: center;
+      gap: 4px;
     }
 
-    .tab-btn {
-      flex: 1;
-      min-width: 80px;
+    .weather-brief-dot {
+      width: 6px;
+      height: 6px;
       border-radius: 999px;
-      padding: 8px 10px;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid transparent;
-      color: #64748b;
-      background: transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
-        border-color 0.18s ease, transform 0.1s ease;
+      background: #22c55e;
     }
 
-    .tab-btn.active {
-      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-      color: #ffffff;
-      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.35);
-      border-color: transparent;
-      transform: translateY(-1px);
-    }
-
-    .tab-btn:not(.active):hover {
-      background: rgba(148, 163, 184, 0.12);
-    }
-
-    /* Tab content wrapper */
+    /* 內容區 */
     .content {
       flex: 1;
-      padding: 14px 14px 18px;
+      padding: 14px 14px 90px;
     }
 
     .tab-content {
@@ -182,6 +178,7 @@
       cursor: pointer;
       transition: transform 0.12s ease, box-shadow 0.12s ease,
         border-color 0.12s ease, background 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .event-card::before {
@@ -263,6 +260,11 @@
       background: #ffffff;
     }
 
+    .event-card:active {
+      transform: scale(0.99);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    }
+
     /* Info & Money cards */
     .info-section {
       display: flex;
@@ -283,6 +285,8 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 6px;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
 
     .info-title {
@@ -455,16 +459,67 @@
       color: #b91c1c;
     }
 
-    /* Modal */
+    /* 底部 Tab Bar */
+    .tabs {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      max-width: 960px;
+      width: 100%;
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.96),
+        rgba(248, 250, 252, 0.98)
+      );
+      backdrop-filter: blur(18px);
+      z-index: 40;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 0;
+      border-radius: 999px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      color: #64748b;
+      background: transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
+        border-color 0.18s ease, transform 0.1s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.35);
+      border-color: transparent;
+      transform: translateY(-1px);
+    }
+
+    .tab-btn:not(.active):hover {
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    /* Modal 底部抽屜 */
     .modal-backdrop {
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.55);
       display: none;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       z-index: 50;
-      padding: 14px;
+      padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
     }
 
     .modal-backdrop.show {
@@ -473,17 +528,20 @@
 
     .modal-box {
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
       background: #0f172a;
-      border-radius: 22px;
+      border-radius: 22px 22px 0 0;
       overflow: hidden;
-      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.75);
+      box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.75);
       border: 1px solid rgba(148, 163, 184, 0.45);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .modal-img {
       width: 100%;
-      height: 230px;
+      height: 210px;
       object-fit: cover;
       background: #020617;
       display: block;
@@ -492,6 +550,7 @@
     .modal-body {
       padding: 14px 15px 13px;
       color: #e5e7eb;
+      overflow-y: auto;
     }
 
     .modal-title {
@@ -540,6 +599,96 @@
       color: #e5e7eb;
     }
 
+    /* 天氣卡片 */
+    .weather-now {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .weather-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #weather-temp-main {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    #weather-desc {
+      font-size: 13px;
+      color: #4b5563;
+    }
+
+    #weather-temp-range {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .weather-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top, #fee2e2, #fee8d8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .weather-icon img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .weather-forecast-title {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+
+    .weather-forecast-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .weather-forecast-item {
+      min-width: 70px;
+      padding: 6px 6px 7px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    .weather-hour {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .weather-forecast-item img {
+      width: 30px;
+      height: 30px;
+    }
+
+    .weather-tag-error {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
     /* Responsive tweaks */
     @media (min-width: 720px) {
       .content {
@@ -559,14 +708,10 @@
     <div class="header-inner">
       <div class="app-title">大阪四天三夜 · 行程 & 記帳</div>
       <div class="app-subtitle">12/5–12/8 · 早班機＋大阪城＋京瓷巨蛋＋勝尾寺 · 雙人 AA 小工具</div>
-    </div>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="day1">Day 1｜大阪城 & 心齋橋</button>
-      <button class="tab-btn" data-tab="day2">Day 2｜黑門 & 京瓷巨蛋</button>
-      <button class="tab-btn" data-tab="day3">Day 3｜勝尾寺 & 梅田</button>
-      <button class="tab-btn" data-tab="day4">Day 4｜回家</button>
-      <button class="tab-btn" data-tab="info">資訊</button>
-      <button class="tab-btn" data-tab="money">記帳</button>
+      <div class="weather-brief" id="weather-brief">
+        <span class="weather-brief-dot"></span>
+        大阪天氣讀取中…
+      </div>
     </div>
   </header>
 
@@ -868,6 +1013,26 @@
     <!-- Info -->
     <section id="tab-info" class="tab-content">
       <div class="info-section">
+        <!-- 天氣卡片 -->
+        <div class="info-card" id="weather-card">
+          <div class="info-title-row">
+            <div class="info-title">🌦 大阪現在天氣</div>
+            <span class="info-tag" id="weather-updated">載入中...</span>
+          </div>
+          <div class="weather-now">
+            <div class="weather-main">
+              <div id="weather-temp-main">--°C</div>
+              <div id="weather-desc">讀取中...</div>
+              <div id="weather-temp-range">高 --° / 低 --° · 體感 --°</div>
+            </div>
+            <div class="weather-icon" id="weather-icon">
+              <!-- icon -->
+            </div>
+          </div>
+          <div class="weather-forecast-title">接下來幾個時段</div>
+          <div class="weather-forecast-row" id="weather-forecast-row"></div>
+        </div>
+
         <div class="info-card">
           <div class="info-title-row">
             <div class="info-title">🏨 住宿資訊</div>
@@ -958,6 +1123,16 @@
       </div>
     </section>
   </main>
+
+  <!-- Tab Bar -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="day1">Day 1</button>
+    <button class="tab-btn" data-tab="day2">Day 2</button>
+    <button class="tab-btn" data-tab="day3">Day 3</button>
+    <button class="tab-btn" data-tab="day4">Day 4</button>
+    <button class="tab-btn" data-tab="info">資訊</button>
+    <button class="tab-btn" data-tab="money">記帳</button>
+  </nav>
 </div>
 
 <!-- Modal -->
@@ -1219,6 +1394,7 @@
       btn.classList.add("active");
       tabContents.forEach((c) => c.classList.remove("active"));
       document.getElementById(`tab-${target}`).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
 
@@ -1429,6 +1605,139 @@
     loadExpenses();
   });
 
+  /* -------- 天氣（OpenWeather） -------- */
+  const OPENWEATHER_API_KEY = "807111d60af9f37403e02a8705d2ec1e";
+  const OSAKA_LAT = 34.6937;
+  const OSAKA_LON = 135.5023;
+
+  async function fetchWeather() {
+    const brief = document.getElementById("weather-brief");
+    const updatedTag = document.getElementById("weather-updated");
+    try {
+      const [nowRes, forecastRes] = await Promise.all([
+        fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${OSAKA_LAT}&lon=${OSAKA_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_tw`
+        ),
+        fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${OSAKA_LAT}&lon=${OSAKA_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_tw`
+        )
+      ]);
+
+      if (!nowRes.ok || !forecastRes.ok) {
+        throw new Error("Weather API 回應錯誤");
+      }
+
+      const nowJson = await nowRes.json();
+      const forecastJson = await forecastRes.json();
+      updateWeatherUI(nowJson, forecastJson);
+      if (brief) {
+        const temp = Math.round(nowJson.main.temp);
+        const desc = nowJson.weather?.[0]?.description || "";
+        brief.innerHTML = `<span class="weather-brief-dot"></span>大阪現在 ${temp}°C · ${desc}`;
+      }
+      if (updatedTag) {
+        const dt = new Date();
+        const hh = String(dt.getHours()).padStart(2, "0");
+        const mm = String(dt.getMinutes()).padStart(2, "0");
+        updatedTag.textContent = `更新時間 ${hh}:${mm}`;
+      }
+    } catch (err) {
+      console.error("天氣讀取失敗", err);
+      if (brief) {
+        brief.innerHTML =
+          '<span class="weather-brief-dot" style="background:#f97316;"></span>大阪天氣暫時讀取失敗';
+      }
+      if (updatedTag) {
+        updatedTag.textContent = "讀取失敗";
+        updatedTag.classList.add("weather-tag-error");
+      }
+    }
+  }
+
+  function updateWeatherUI(now, forecast) {
+    const tempMainEl = document.getElementById("weather-temp-main");
+    const descEl = document.getElementById("weather-desc");
+    const rangeEl = document.getElementById("weather-temp-range");
+    const iconBox = document.getElementById("weather-icon");
+    const forecastRow = document.getElementById("weather-forecast-row");
+
+    if (!now || !now.main || !Array.isArray(now.weather)) return;
+
+    const temp = Math.round(now.main.temp);
+    const feels = Math.round(now.main.feels_like);
+    const tMax = Math.round(now.main.temp_max);
+    const tMin = Math.round(now.main.temp_min);
+    const desc = now.weather[0].description || "";
+    const icon = now.weather[0].icon || "";
+
+    if (tempMainEl) tempMainEl.textContent = `${temp}°C`;
+    if (descEl) descEl.textContent = desc;
+    if (rangeEl) {
+      rangeEl.textContent = `高 ${tMax}° / 低 ${tMin}° · 體感 ${feels}°`;
+    }
+
+    if (iconBox) {
+      iconBox.innerHTML = "";
+      if (icon) {
+        const img = document.createElement("img");
+        img.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
+        img.alt = desc;
+        iconBox.appendChild(img);
+      } else {
+        iconBox.textContent = "☁️";
+      }
+    }
+
+    // 預報（抓前幾個時段）
+    if (!forecastRow) return;
+    forecastRow.innerHTML = "";
+    if (!forecast || !Array.isArray(forecast.list)) return;
+
+    const items = forecast.list.slice(0, 4); // 約 12 小時內
+    items.forEach((it) => {
+      const t = it.main && typeof it.main.temp === "number"
+        ? Math.round(it.main.temp)
+        : null;
+      const w = it.weather && it.weather[0];
+      const icon2 = w?.icon;
+      const desc2 = w?.description || "";
+      const dt = new Date(it.dt * 1000);
+      const hour = String(dt.getHours()).padStart(2, "0");
+
+      const box = document.createElement("div");
+      box.className = "weather-forecast-item";
+
+      const hEl = document.createElement("div");
+      hEl.className = "weather-hour";
+      hEl.textContent = `${hour}時`;
+
+      const iconWrap = document.createElement("div");
+      if (icon2) {
+        const img2 = document.createElement("img");
+        img2.src = `https://openweathermap.org/img/wn/${icon2}.png`;
+        img2.alt = desc2;
+        iconWrap.appendChild(img2);
+      } else {
+        iconWrap.textContent = "·";
+      }
+
+      const tempEl = document.createElement("div");
+      tempEl.textContent = t !== null ? `${t}°` : "--°";
+
+      const dEl = document.createElement("div");
+      dEl.style.fontSize = "10px";
+      dEl.style.color = "#6b7280";
+      dEl.textContent = desc2;
+
+      box.appendChild(hEl);
+      box.appendChild(iconWrap);
+      box.appendChild(tempEl);
+      box.appendChild(dEl);
+
+      forecastRow.appendChild(box);
+    });
+  }
+
   /* -------- Service Worker -------- */
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker
@@ -1442,6 +1751,7 @@
     loadRoomNumber();
     await fetchRate();
     await loadExpenses();
+    await fetchWeather();
   }
 
   window.addEventListener("load", init);
