@@ -1,0 +1,32 @@
+<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#FFF9F2"/>
+      <stop offset="70%" stop-color="#FFEAD5"/>
+      <stop offset="100%" stop-color="#F3D3B5"/>
+    </radialGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE8A3"/>
+      <stop offset="60%" stop-color="#FFD262"/>
+      <stop offset="100%" stop-color="#FFB020"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 背景圓 -->
+  <circle cx="36" cy="36" r="32" fill="url(#bg)"/>
+
+  <!-- 太陽光芒 -->
+  <g stroke="#FFC94A" stroke-width="2" stroke-linecap="round">
+    <line x1="36" y1="14" x2="36" y2="8"/>
+    <line x1="36" y1="60" x2="36" y2="64"/>
+    <line x1="18" y1="22" x2="14" y2="18"/>
+    <line x1="54" y1="50" x2="58" y2="54"/>
+    <line x1="18" y1="50" x2="14" y2="54"/>
+    <line x1="54" y1="22" x2="58" y2="18"/>
+    <line x1="24" y1="16" x2="22" y2="12"/>
+    <line x1="48" y1="56" x2="50" y2="60"/>
+  </g>
+
+  <!-- 太陽本體 -->
+  <circle cx="36" cy="36" r="14" fill="url(#sun)"/>
+</svg>

@@ -1,0 +1,32 @@
+<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 奶茶背景 -->
+    <radialGradient id="bg" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#F8F4EE"/>
+      <stop offset="70%" stop-color="#EFE6DD"/>
+      <stop offset="100%" stop-color="#E4D9CE"/>
+    </radialGradient>
+
+    <!-- 細長雨滴漸層 -->
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C7DDF3" />
+      <stop offset="100%" stop-color="#9BBFE5" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景圓 -->
+  <circle cx="36" cy="36" r="32" fill="url(#bg)" />
+
+  <!-- 雲 -->
+  <g fill="#DEE1E4">
+    <ellipse cx="40" cy="34" rx="16" ry="10"/>
+    <ellipse cx="28" cy="37" rx="12" ry="8"/>
+  </g>
+
+  <!-- 細長雨絲 -->
+  <g fill="url(#drop)">
+    <rect x="24" y="44" width="4" height="12" rx="2"/>
+    <rect x="34" y="44" width="4" height="12" rx="2"/>
+    <rect x="44" y="44" width="4" height="12" rx="2"/>
+  </g>
+</svg>
