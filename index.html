@@ -297,6 +297,63 @@
       gap: 2px;
     }
 
+/* ⬇ 從這裡開始新增這幾個 class ⬇ */
+
+    .expense-edit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .expense-edit-row input,
+    .expense-edit-row select {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #cbd5f5;
+      font-size: 13px;
+      min-width: 90px;
+      background: #f8fafc;
+    }
+
+    .expense-edit-note {
+      width: 100%;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #cbd5f5;
+      font-size: 13px;
+      background: #f8fafc;
+      margin-bottom: 6px;
+    }
+
+    .expense-edit-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .expense-edit-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .expense-edit-btn.save {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.35);
+    }
+
+    .expense-edit-btn.cancel {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+    }
+
+
     .expense-main-title {
       font-size: 14px;
       font-weight: 600;
@@ -1545,6 +1602,7 @@
   );
 
   /* -------- 記帳讀取 / 呈現 -------- */
+  let expensesData = [];   // ＜＜ 新增：把目前的記帳資料存起來
   async function loadExpenses() {
     const { data, error } = await supabaseClient
       .from("budgets")
@@ -1567,6 +1625,9 @@
     const settleEl = document.getElementById("settlement");
 
     if (!listEl || !totalEl || !settleEl) return;
+
+    // 把目前資料記起來，給 inline 編輯用
+    expensesData = rows;
 
     listEl.innerHTML = "";
 
@@ -1665,27 +1726,96 @@
     loadExpenses();
   }
 
-  async function editExpense(id) {
+  function editExpense(id) {
     closeMenu();
-    const newAmount = prompt("請輸入新的金額（日幣）：");
-    if (newAmount === null) return;
-    const amt = Number(newAmount);
-    if (isNaN(amt) || amt <= 0) {
+
+    // 從暫存的 expensesData 找出這一筆
+    const row = expensesData.find((r) => String(r.id) === String(id));
+    if (!row) return;
+
+    const item = document.getElementById(`exp-${id}`);
+    if (!item) return;
+
+    const jpy = Number(row.amount) || 0;
+    const note = row.note || "";
+    const payer = row.payer || "羊";
+    const safeNote = note.replace(/"/g, "&quot;");
+
+    item.innerHTML = `
+      <div class="expense-main">
+        <div class="expense-edit-row">
+          <input
+            type="number"
+            class="expense-edit-amount"
+            value="${jpy}"
+            placeholder="金額（日幣）"
+            inputmode="numeric"
+          />
+          <select class="expense-edit-payer">
+            <option value="羊" ${payer === "羊" ? "selected" : ""}>羊</option>
+            <option value="熙" ${payer === "熙" ? "selected" : ""}>熙</option>
+          </select>
+        </div>
+        <input
+          type="text"
+          class="expense-edit-note"
+          value="${safeNote}"
+          placeholder="備註（可空白）"
+        />
+      </div>
+      <div class="expense-edit-actions">
+        <button class="expense-edit-btn save" onclick="saveExpenseEdit('${id}')">儲存</button>
+        <button class="expense-edit-btn cancel" onclick="cancelExpenseEdit('${id}')">取消</button>
+      </div>
+    `;
+  }
+  async function saveExpenseEdit(id) {
+    const item = document.getElementById(`exp-${id}`);
+    if (!item) return;
+
+    const amountInput = item.querySelector(".expense-edit-amount");
+    const payerSel = item.querySelector(".expense-edit-payer");
+    const noteInput = item.querySelector(".expense-edit-note");
+
+    const amount = Number(amountInput.value);
+    if (isNaN(amount) || amount <= 0) {
       alert("金額必須是正數");
       return;
     }
-    const newNote = prompt("請輸入備註（可留空）：") || "";
+
+    const payer = payerSel.value;
+    const note = noteInput.value.trim();
+
     const { error } = await supabaseClient
       .from("budgets")
-      .update({ amount: amt, note: newNote })
+      .update({
+        amount: amount,
+        payer: payer,
+        note: note || null,
+      })
       .eq("id", id);
+
     if (error) {
       alert("更新失敗，請稍後再試");
       console.error(error);
       return;
     }
+
+    // 重新讀取，讓列表跟 AA 結算一起更新
     loadExpenses();
   }
+
+  function cancelExpenseEdit(id) {
+    // 直接用暫存資料重新 render 回原來畫面
+    renderExpenses(expensesData);
+  }
+
+  window.openMenu = openMenu;
+  window.editExpense = editExpense;
+  window.deleteExpense = deleteExpense;
+  window.saveExpenseEdit = saveExpenseEdit;
+  window.cancelExpenseEdit = cancelExpenseEdit;
+
 
   window.openMenu = openMenu;
   window.editExpense = editExpense;
@@ -1808,5 +1938,6 @@
 </script>
 </body>
 </html>
+
 
 
