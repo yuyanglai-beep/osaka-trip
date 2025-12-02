@@ -433,6 +433,11 @@
       top: 90px; /* header + tabs 下方 */
       align-self: flex-start;
     }
+        /* 修正 Day Bar 左欄不應撐滿 layout */
+    .seg-day-wrapper {
+      width: 115px;     /* 左欄 Day Bar 固定寬度（你 screenshot 最漂亮的寬度） */
+      flex-shrink: 0;   /* 不被壓縮，也不會撐開右欄 */
+    }
 
     .day-pill {
       border-radius: 18px;
@@ -795,52 +800,66 @@
       font-size: 13px;
       color: #64748b;
     }
-    /* ===== Day Bar：連貫 segmented control ===== */
+   /* ===== Day Bar：垂直 segmented control（唯一需要的版本） ===== */
     .seg-day-wrapper {
       position: relative;
       display: flex;
-      gap: 0;
-      padding: 4px;
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
-      border: 1px solid rgba(226,232,240,0.8);
+      flex-direction: column;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(226,232,240,0.7);
     }
     
     .seg-day-wrapper .day-pill {
-      flex: 1;
-      border-radius: 18px;
+      width: 100%;
+      text-align: left;
+      border-radius: 16px;
       border: none;
-      text-align: center;
       background: transparent;
-      position: relative;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
       z-index: 5;
+      position: relative;
       transition: color .25s ease;
-      padding: 10px 6px;
+    }
+    
+    .seg-day-wrapper .day-pill span {
+      font-size: 11px;
+      color: #94a3b8;
     }
     
     .seg-day-wrapper .day-pill:hover {
-      background: rgba(226, 232, 240, 0.5);
+      background: rgba(226,232,240,0.45);
     }
     
-    /* 高亮滑塊 */
+    /* 垂直滑塊 */
     .seg-day-track {
       position: absolute;
-      top: 4px;
-      bottom: 4px;
-      left: 4px;
-      width: calc((100% - 8px) / 4); /* 4天 */
-      border-radius: 18px;
+      left: 6px;
+      right: 6px;
+      height: calc((100% - 12px - (6px * 3)) / 4); /* 4 天 */
+      border-radius: 16px;
       background: linear-gradient(135deg, var(--brand), var(--brand-dark));
       box-shadow: 0 8px 16px rgba(10,132,255,0.35);
       transition: transform .28s cubic-bezier(.25,.8,.25,1);
       z-index: 1;
     }
     
-    /* active 文字變白 */
+    /* active */
     .seg-day-wrapper .day-pill.active {
-      color: #ffffff;
+      color: white;
     }
+    
+    .seg-day-wrapper .day-pill.active span {
+      color: #e0f2fe;
+    }
+
+
 
 
   </style>
@@ -2031,9 +2050,36 @@
   }
 
   window.addEventListener("load", init);
+    /* ===== Day Bar：滑塊位置控制 ===== */
+  const segTrack = document.querySelector(".seg-day-track");
+  const dayPillsArr = Array.from(document.querySelectorAll(".day-pill"));
+  
+  function updateSegTrack() {
+    const activeIndex = dayPillsArr.findIndex(p => p.classList.contains("active"));
+    if (activeIndex < 0) return;
+  
+    // 一個 pill 的高度 (含 gap)
+    const pill = dayPillsArr[0];
+    const pillHeight = pill.offsetHeight + 6; // 6px = gap
+  
+    // 移動滑塊
+    segTrack.style.transform = `translateY(${activeIndex * pillHeight}px)`;
+  }
+  
+  // 頁面載入後先對齊滑塊
+  window.addEventListener("load", updateSegTrack);
+  
+  // 點擊切換後同步滑塊
+  dayPillsArr.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      setTimeout(updateSegTrack, 10);
+    });
+  });
+
 </script>
 </body>
 </html>
+
 
 
 
