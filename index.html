@@ -682,6 +682,63 @@
         flex-wrap: nowrap;
       }
     }
+        /* ===== 天氣卡片（Google Material 風格） ===== */
+    .weather-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px 18px 16px;
+    }
+    
+    .weather-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .weather-main {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .weather-icon-wrapper {
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .weather-icon {
+      width: 48px;
+      height: 48px;
+    }
+    
+    .weather-temp-block {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    
+    .weather-temp {
+      font-size: 30px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    
+    .weather-desc {
+      font-size: 14px;
+     color: #475569;
+    }
+    
+    .weather-extra {
+      font-size: 13px;
+      color: #64748b;
+    }
+
   </style>
 </head>
 
@@ -1699,27 +1756,37 @@
 
   function updateWeatherUI(nowJson, brief) {
     if (!nowJson || !nowJson.main) return;
+  
     const temp = Math.round(nowJson.main.temp);
     const feels = Math.round(nowJson.main.feels_like);
     const desc = nowJson.weather?.[0]?.description || "";
     const humidity = nowJson.main.humidity;
     const wind = nowJson.wind?.speed ?? 0;
-
+    const icon = nowJson.weather?.[0]?.icon;
+  
+    // ---------------------------------------------------
+    // 1. Header 小天氣（你頁首用的）
+    // ---------------------------------------------------
     if (brief) {
       brief.innerHTML =
         '<span class="weather-brief-dot"></span>' +
         `大阪現在 ${temp}°C · ${desc}`;
     }
-
-    const mainLine = document.getElementById("weather-main-line");
-    const extraLine = document.getElementById("weather-extra-line");
-    if (mainLine) {
-      mainLine.textContent = `現在 ${temp}°C · 體感 ${feels}°C · ${desc}`;
-    }
-    if (extraLine) {
-      extraLine.textContent = `濕度 ${humidity}% · 風速 ${wind} m/s`;
+  
+    // ---------------------------------------------------
+    // 2. Weather Card 的 UI
+    // ---------------------------------------------------
+    document.getElementById("weather-temp").textContent = `${temp}°C`;
+    document.getElementById("weather-desc").textContent = desc;
+    document.getElementById("weather-humidity").textContent = `濕度 ${humidity}%`;
+    document.getElementById("weather-wind").textContent = `風速 ${wind} m/s`;
+  
+    if (icon) {
+      document.getElementById("weather-icon").src =
+        `https://openweathermap.org/img/wn/${icon}@2x.png`;
     }
   }
+
 
   /* -------- Service Worker -------- */
   if ("serviceWorker" in navigator) {
@@ -1741,6 +1808,5 @@
 </script>
 </body>
 </html>
-現在這是我的程式
-我想對天氣卡片做視覺的優化
+
 
