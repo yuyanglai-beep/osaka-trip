@@ -1033,14 +1033,29 @@
     <!-- TAB 2：資訊 & 天氣 -->
     <section class="tab-section" data-tab="info">
       <!-- 天氣卡 -->
-      <div class="info-card">
-        <div class="info-title-row">
+      <div class="weather-card info-card">
+        <div class="weather-card-header">
           <div class="info-title">🌤 大阪天氣</div>
-          <span class="info-tag">即時 · OpenWeather</span>
+          <span class="info-tag">OpenWeather</span>
         </div>
-        <div class="info-line" id="weather-main-line">大阪天氣讀取中…</div>
-        <div class="info-line" id="weather-extra-line"></div>
+      
+        <div class="weather-main">
+          <div class="weather-icon-wrapper">
+            <img id="weather-icon" class="weather-icon" src="" alt="weather icon">
+          </div>
+      
+          <div class="weather-temp-block">
+            <div id="weather-temp" class="weather-temp">--°C</div>
+            <div id="weather-desc" class="weather-desc">讀取中…</div>
+          </div>
+        </div>
+      
+        <div class="weather-extra">
+          <span id="weather-humidity">濕度 --%</span> · 
+          <span id="weather-wind">風速 -- m/s</span>
+        </div>
       </div>
+
 
       <!-- 住宿資訊 -->
       <div class="info-card">
@@ -1728,3 +1743,4 @@
 </html>
 現在這是我的程式
 我想對天氣卡片做視覺的優化
+
