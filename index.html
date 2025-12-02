@@ -1863,6 +1863,13 @@
   const OPENWEATHER_API_KEY = "807111d60af9f37403e02a8705d2ec1e";
   const OSAKA_LAT = 34.6937;
   const OSAKA_LON = 135.5023;
+  const weatherIconMap = {
+    "clear": "clear-day.svg",
+    "few-clouds": "partly-cloudy.svg",
+    "cloudy": "cloudy.svg",
+    "rain": "rain-thinline.svg",
+    "heavy-rain": "heavy-rain-thinline.svg"
+  };
 
   async function fetchWeather() {
     const brief = document.getElementById("weather-brief");
@@ -1901,6 +1908,44 @@
       brief.innerHTML =
         '<span class="weather-brief-dot"></span>' +
         `大阪現在 ${temp}°C · ${desc}`;
+          // 取出 OpenWeather 的主要代碼
+    const wid = nowJson.weather?.[0]?.id || 0;
+    
+    // 天氣分類（依 OpenWeather ID）
+    let iconKey = "";
+    
+    // 雷雨
+    if (wid >= 200 && wid < 300) {
+      iconKey = "rain";
+    }
+    // 毛毛雨
+    else if (wid >= 300 && wid < 400) {
+      iconKey = "rain";
+    }
+    // 雨
+    else if (wid >= 500 && wid < 600) {
+      iconKey = wid >= 520 ? "heavy-rain" : "rain";
+    }
+    // 雪 (你沒有 icon 先用 cloudy)
+    else if (wid >= 600 && wid < 700) {
+      iconKey = "cloudy";
+    }
+    // 晴天
+    else if (wid === 800) {
+      iconKey = "clear";
+    }
+    // 晴時多雲
+    else if (wid > 800 && wid <= 803) {
+      iconKey = "few-clouds";
+    }
+    // 陰天
+    else if (wid === 804) {
+      iconKey = "cloudy";
+    }
+    
+    // 套用 icon
+    document.getElementById("weather-icon").src = `./images/weather/${weatherIconMap[iconKey]}`;
+
     }
   
     // ---------------------------------------------------
@@ -1938,6 +1983,7 @@
 </script>
 </body>
 </html>
+
 
 
 
