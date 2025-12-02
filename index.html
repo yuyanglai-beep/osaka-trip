@@ -795,6 +795,53 @@
       font-size: 13px;
       color: #64748b;
     }
+    /* ===== Day Bar：連貫 segmented control ===== */
+    .seg-day-wrapper {
+      position: relative;
+      display: flex;
+      gap: 0;
+      padding: 4px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(226,232,240,0.8);
+    }
+    
+    .seg-day-wrapper .day-pill {
+      flex: 1;
+      border-radius: 18px;
+      border: none;
+      text-align: center;
+      background: transparent;
+      position: relative;
+      z-index: 5;
+      transition: color .25s ease;
+      padding: 10px 6px;
+    }
+    
+    .seg-day-wrapper .day-pill:hover {
+      background: rgba(226, 232, 240, 0.5);
+    }
+    
+    /* 高亮滑塊 */
+    .seg-day-track {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc((100% - 8px) / 4); /* 4天 */
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      box-shadow: 0 8px 16px rgba(10,132,255,0.35);
+      transition: transform .28s cubic-bezier(.25,.8,.25,1);
+      z-index: 1;
+    }
+    
+    /* active 文字變白 */
+    .seg-day-wrapper .day-pill.active {
+      color: #ffffff;
+    }
+
 
   </style>
 </head>
@@ -823,26 +870,30 @@
   <main class="content">
     <!-- TAB 1：行程 -->
     <section class="tab-section active" data-tab="plan">
-      <section class="plan-layout">
-        <!-- 左：Day Bar -->
-        <aside class="day-list">
-          <button class="day-pill active" data-day="day1">
-            Day 1
-            <span>大阪城 & 道頓堀</span>
-          </button>
-          <button class="day-pill" data-day="day2">
-            Day 2
-            <span>黑門 & 巨蛋</span>
-          </button>
-          <button class="day-pill" data-day="day3">
-            Day 3
-            <span>勝尾寺 & 梅田</span>
-          </button>
-          <button class="day-pill" data-day="day4">
-            Day 4
-            <span>退房 & 回家</span>
-          </button>
-        </aside>
+      <aside class="day-list seg-day-wrapper">
+        <div class="seg-day-track"></div>
+      
+        <button class="day-pill active" data-day="day1">
+          Day 1
+          <span>大阪城 & 道頓堀</span>
+        </button>
+      
+        <button class="day-pill" data-day="day2">
+          Day 2
+          <span>黑門 & 巨蛋</span>
+        </button>
+      
+        <button class="day-pill" data-day="day3">
+          Day 3
+          <span>勝尾寺 & 梅田</span>
+        </button>
+      
+        <button class="day-pill" data-day="day4">
+          Day 4
+          <span>退房 & 回家</span>
+        </button>
+      </aside>
+
 
         <!-- 右：Timeline -->
         <div class="plan-timeline-container">
@@ -1983,6 +2034,7 @@
 </script>
 </body>
 </html>
+
 
 
 
