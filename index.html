@@ -433,11 +433,6 @@
       top: 90px; /* header + tabs 下方 */
       align-self: flex-start;
     }
-        /* 修正 Day Bar 左欄不應撐滿 layout */
-    .seg-day-wrapper {
-      width: 115px;     /* 左欄 Day Bar 固定寬度（你 screenshot 最漂亮的寬度） */
-      flex-shrink: 0;   /* 不被壓縮，也不會撐開右欄 */
-    }
 
     .day-pill {
       border-radius: 18px;
@@ -800,67 +795,6 @@
       font-size: 13px;
       color: #64748b;
     }
-   /* ===== Day Bar：垂直 segmented control（唯一需要的版本） ===== */
-    .seg-day-wrapper {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 6px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
-      border: 1px solid rgba(226,232,240,0.7);
-    }
-    
-    .seg-day-wrapper .day-pill {
-      width: 100%;
-      text-align: left;
-      border-radius: 16px;
-      border: none;
-      background: transparent;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-      z-index: 5;
-      position: relative;
-      transition: color .25s ease;
-    }
-    
-    .seg-day-wrapper .day-pill span {
-      font-size: 11px;
-      color: #94a3b8;
-    }
-    
-    .seg-day-wrapper .day-pill:hover {
-      background: rgba(226,232,240,0.45);
-    }
-    
-    /* 垂直滑塊 */
-    .seg-day-track {
-      position: absolute;
-      left: 6px;
-      right: 6px;
-      height: calc((100% - 12px - (6px * 3)) / 4); /* 4 天 */
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-      box-shadow: 0 8px 16px rgba(10,132,255,0.35);
-      transition: transform .28s cubic-bezier(.25,.8,.25,1);
-      z-index: 1;
-    }
-    
-    /* active */
-    .seg-day-wrapper .day-pill.active {
-      color: white;
-    }
-    
-    .seg-day-wrapper .day-pill.active span {
-      color: #e0f2fe;
-    }
-
-
-
 
   </style>
 </head>
@@ -889,30 +823,26 @@
   <main class="content">
     <!-- TAB 1：行程 -->
     <section class="tab-section active" data-tab="plan">
-      <aside class="day-list seg-day-wrapper">
-        <div class="seg-day-track"></div>
-      
-        <button class="day-pill active" data-day="day1">
-          Day 1
-          <span>大阪城 & 道頓堀</span>
-        </button>
-      
-        <button class="day-pill" data-day="day2">
-          Day 2
-          <span>黑門 & 巨蛋</span>
-        </button>
-      
-        <button class="day-pill" data-day="day3">
-          Day 3
-          <span>勝尾寺 & 梅田</span>
-        </button>
-      
-        <button class="day-pill" data-day="day4">
-          Day 4
-          <span>退房 & 回家</span>
-        </button>
-      </aside>
-
+      <section class="plan-layout">
+        <!-- 左：Day Bar -->
+        <aside class="day-list">
+          <button class="day-pill active" data-day="day1">
+            Day 1
+            <span>大阪城 & 道頓堀</span>
+          </button>
+          <button class="day-pill" data-day="day2">
+            Day 2
+            <span>黑門 & 巨蛋</span>
+          </button>
+          <button class="day-pill" data-day="day3">
+            Day 3
+            <span>勝尾寺 & 梅田</span>
+          </button>
+          <button class="day-pill" data-day="day4">
+            Day 4
+            <span>退房 & 回家</span>
+          </button>
+        </aside>
 
         <!-- 右：Timeline -->
         <div class="plan-timeline-container">
@@ -2050,40 +1980,6 @@
   }
 
   window.addEventListener("load", init);
-    /* ===== Day Bar：滑塊位置控制 ===== */
-  const segTrack = document.querySelector(".seg-day-track");
-  const dayPillsArr = Array.from(document.querySelectorAll(".day-pill"));
-  
-  function updateSegTrack() {
-    const activeIndex = dayPillsArr.findIndex(p => p.classList.contains("active"));
-    if (activeIndex < 0) return;
-  
-    // 一個 pill 的高度 (含 gap)
-    const pill = dayPillsArr[0];
-    const pillHeight = pill.offsetHeight + 6; // 6px = gap
-  
-    // 移動滑塊
-    segTrack.style.transform = `translateY(${activeIndex * pillHeight}px)`;
-  }
-  
-  // 頁面載入後先對齊滑塊
-  window.addEventListener("load", updateSegTrack);
-  
-  // 點擊切換後同步滑塊
-  dayPillsArr.forEach((pill) => {
-    pill.addEventListener("click", () => {
-      setTimeout(updateSegTrack, 10);
-    });
-  });
-
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
