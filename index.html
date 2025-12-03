@@ -1242,18 +1242,35 @@
             <div class="pill-note">
               💡 金額以「日幣」輸入，我會自動抓台銀日幣匯率換算成台幣。
             </div>
-
-            <form id="expense-form" class="expense-form">
-              <input type="number" id="exp-amount" placeholder="金額（日幣）" inputmode="numeric" required>
+            
+            <div class="expense-form">
+              <input type="number" id="exp-amount" placeholder="金額" inputmode="numeric" required>
+            
+              <select id="exp-currency">
+                <option value="JPY">JPY（日幣）</option>
+                <option value="TWD">TWD（台幣）</option>
+                <option value="USD">USD（美金）</option>
+              </select>
+            
               <select id="exp-payer">
                 <option value="羊">羊</option>
                 <option value="熙">熙</option>
               </select>
-              <input type="text" id="exp-note" placeholder="備註（可空白）">
-              <button type="submit">新增</button>
-            </form>
-          </div>
-        </div>
+            
+              <input type="text" id="exp-note" placeholder="備註（可留空）">
+            
+              <button id="exp-submit">新增</button>
+            </div>
+            
+            <!-- 顯示幣值切換 -->
+            <div style="margin: 10px 0;">
+              <select id="display-currency" style="padding:6px 10px; border-radius:12px;">
+                <option value="TWD">以台幣顯示</option>
+                <option value="JPY">以日幣顯示</option>
+                <option value="USD">以美金顯示</option>
+              </select>
+            </div>
+
 
         <div class="info-card">
           <div class="info-title-row">
@@ -1622,44 +1639,67 @@
 
   let currentMenu = null;
 
-  function renderExpenses(rows) {
-    const listEl = document.getElementById("expense-list");
-    const totalEl = document.getElementById("expense-total");
-    const settleEl = document.getElementById("settlement");
+/* ===== 顯示記帳（支援幣別切換） ===== */
 
-    if (!listEl || !totalEl || !settleEl) return;
+function renderExpenses(rows) {
+  const listEl = document.getElementById("expense-list");
+  const totalEl = document.getElementById("expense-total");
+  const settleEl = document.getElementById("settlement");
+  const displaySel = document.getElementById("display-currency");
 
-    // 把目前資料記起來，給 inline 編輯用
-    expensesData = rows;
+  if (!listEl || !totalEl || !settleEl) return;
 
-    listEl.innerHTML = "";
+  const displayMode = displaySel ? displaySel.value : "TWD";
 
-    let totalJPY = 0;
-    let byPayer = { 羊: 0, 熙: 0 };
+  listEl.innerHTML = "";
+  expensesData = rows;
 
-    rows.forEach((row) => {
-      const jpy = Number(row.amount) || 0;
-      totalJPY += jpy;
-      const twd = rateJPYtoTWD ? Math.round(jpy * rateJPYtoTWD) : 0;
+  let totalTWD = 0;
+  let byPayer = { "羊": 0, "熙": 0 };
 
-      if (row.payer && byPayer[row.payer] !== undefined) {
-        byPayer[row.payer] += twd;
-      }
+  rows.forEach((row) => {
+    const rawAmt = Number(row.raw_amount);
+    const rawCur = row.raw_currency;
+    const twd = Number(row.amount_twd);
 
-      const item = document.createElement("div");
-      item.className = "expense-item";
-      item.id = `exp-${row.id}`;
-      item.innerHTML = `
-        <div class="expense-main">
-          <div class="expense-main-title">
-            <strong>${row.payer}</strong> 支付 ${jpy} JPY ≈ ${twd} TWD
-          </div>
-          <div class="expense-note">${row.note || ""}</div>
+    totalTWD += twd;
+    byPayer[row.payer] += twd;
+
+    // 顯示金額依照 UI 模式
+    let showAmount = 0;
+    if (displayMode === "TWD") showAmount = twd;
+    else showAmount = convertFromTWD(twd, displayMode);
+
+    const item = document.createElement("div");
+    item.className = "expense-item";
+    item.id = `exp-${row.id}`;
+
+    item.innerHTML = `
+      <div class="expense-main">
+        <div class="expense-main-title">
+          <strong>${row.payer}</strong> 支付 ${showAmount} ${displayMode}
         </div>
-        <div class="menu-btn" onclick="openMenu('${row.id}', event)">⋮</div>
-      `;
-      listEl.appendChild(item);
-    });
+        <div class="expense-note">
+          原始：${rawAmt} ${rawCur} ${row.note ? " · " + row.note : ""}
+        </div>
+      </div>
+      <div class="menu-btn" onclick="openMenu('${row.id}', event)">⋮</div>
+    `;
+
+    listEl.appendChild(item);
+  });
+
+  totalEl.textContent = `總計：${totalTWD} TWD`;
+
+  const each = Math.round(totalTWD / 2);
+  const diff = byPayer["熙"] - each;
+
+  if (diff > 0) settleEl.textContent = `羊 → 熙：${diff} TWD`;
+  else if (diff < 0) settleEl.textContent = `熙 → 羊：${-diff} TWD`;
+  else settleEl.textContent = "AA 完全平分。";
+
+}
+
 
     const totalTWD = rateJPYtoTWD ? Math.round(totalJPY * rateJPYtoTWD) : 0;
     totalEl.textContent = totalJPY
@@ -1827,40 +1867,50 @@
   /* -------- 新增記帳 -------- */
   const expenseForm = document.getElementById("expense-form");
   if (expenseForm) {
-    expenseForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+   /* ===== 新增記帳（支援多幣別） ===== */
+
+    document.getElementById("exp-submit").addEventListener("click", async () => {
       const amtInput = document.getElementById("exp-amount");
       const payerSel = document.getElementById("exp-payer");
       const noteInput = document.getElementById("exp-note");
-
-      const amount = Number(amtInput.value);
-      if (isNaN(amount) || amount <= 0) {
+      const currencySel = document.getElementById("exp-currency");
+    
+      const rawAmount = Number(amtInput.value);
+      if (isNaN(rawAmount) || rawAmount <= 0) {
         alert("金額必須是正數");
         return;
       }
+    
+      const rawCurrency = currencySel.value;
+    
+      // 換算成 TWD（結算用）
+      const amountTWD = convertToTWD(rawAmount, rawCurrency);
+    
       const payer = payerSel.value;
       const note = noteInput.value.trim();
-
+    
       const { error } = await supabaseClient.from("budgets").insert([
         {
           trip_id: "osaka-2025",
-          amount: amount,
+          raw_amount: rawAmount,
+          raw_currency: rawCurrency,
+          amount_twd: amountTWD,
           payer: payer,
           note: note || null
         }
       ]);
-
+    
       if (error) {
         alert("新增失敗，請稍後再試");
         console.error(error);
         return;
       }
-
+    
       amtInput.value = "";
       noteInput.value = "";
       loadExpenses();
     });
-  }
+
 
   /* -------- 天氣（OpenWeather） -------- */
   const OPENWEATHER_API_KEY = "807111d60af9f37403e02a8705d2ec1e";
